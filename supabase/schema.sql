@@ -52,10 +52,23 @@ CREATE TABLE IF NOT EXISTS entries (
   created_at TIMESTAMP DEFAULT now()
 );
 
+-- 6. งวดผ่อนจ่ายของแต่ละรายการ (installment plan)
+CREATE TABLE IF NOT EXISTS installments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  entry_id UUID REFERENCES entries(id) ON DELETE CASCADE,
+  seq INT NOT NULL,                                   -- งวดที่ (1,2,3,...)
+  amount NUMERIC NOT NULL CHECK (amount > 0),         -- ยอดงวดนี้ (แก้ไขได้)
+  due_date DATE NOT NULL,                             -- กำหนดชำระ
+  paid BOOLEAN NOT NULL DEFAULT false,               -- เก็บงวดนี้แล้วหรือยัง
+  paid_at DATE,
+  created_at TIMESTAMP DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_memberships_user ON memberships(user_id);
 CREATE INDEX IF NOT EXISTS idx_memberships_book ON memberships(book_id);
 CREATE INDEX IF NOT EXISTS idx_people_book ON people(book_id);
 CREATE INDEX IF NOT EXISTS idx_entries_person ON entries(person_id);
+CREATE INDEX IF NOT EXISTS idx_installments_entry ON installments(entry_id);
 
 -- ═══════════════════════════════════════════════════════════
 -- Row Level Security
@@ -67,6 +80,7 @@ ALTER TABLE books ENABLE ROW LEVEL SECURITY;
 ALTER TABLE people ENABLE ROW LEVEL SECURITY;
 ALTER TABLE memberships ENABLE ROW LEVEL SECURITY;
 ALTER TABLE entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE installments ENABLE ROW LEVEL SECURITY;
 
 -- ไม่มี policy ให้ anon = ปฏิเสธการเข้าถึงจาก client โดยตรง
 -- (ทุก query ต้องผ่าน API Route ที่ตรวจ session แล้วเท่านั้น)

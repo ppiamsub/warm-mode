@@ -4,14 +4,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { baht, toEntryView, thaiFull } from '@/lib/calc';
-import { Phone, ScrollArea, StatusBadge } from '@/components/ui/Primitives';
+import { Phone, ScrollArea } from '@/components/ui/Primitives';
+import { EntryCard } from '@/components/EntryCard';
 import { IconInfo, IconCheck, IconChat } from '@/components/ui/Icons';
-import type { Entry, Person } from '@/types';
+import type { Entry, Installment, Person } from '@/types';
 
 export default function ViewerPage() {
   const router = useRouter();
   const [person, setPerson] = useState<Person | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,6 +24,7 @@ export default function ViewerPage() {
           const data = await res.json();
           setPerson(data.person);
           setEntries(data.entries);
+          setInstallments(data.installments ?? []);
         } else if (res.status === 401 || res.status === 403) {
           router.replace('/');
         }
@@ -32,6 +35,15 @@ export default function ViewerPage() {
   }, []);
 
   const views = useMemo(() => entries.map(toEntryView), [entries]);
+  const installmentsByEntry = useMemo(() => {
+    const m = new Map<string, Installment[]>();
+    for (const ins of installments) {
+      const arr = m.get(ins.entry_id) ?? [];
+      arr.push(ins);
+      m.set(ins.entry_id, arr);
+    }
+    return m;
+  }, [installments]);
   const total = entries.reduce((s, e) => s + Number(e.amount), 0);
   const paid = entries.reduce((s, e) => s + Number(e.paid_amount), 0);
   const remaining = Math.max(total - paid, 0);
@@ -98,25 +110,9 @@ export default function ViewerPage() {
           {/* รายการของฉัน */}
           <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink, margin: '0 2px 12px' }}>รายการของฉัน</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {views.map((v) => {
-              const note = v.status === 'paid' ? 'จ่ายครบ' : v.status === 'partial' ? `เหลือ ${baht(v.remaining)}` : 'ยังไม่จ่าย';
-              return (
-                <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(16,40,28,.04)' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14.5, fontWeight: 600, color: colors.ink }}>{v.description}</div>
-                    <div style={{ fontSize: 12, color: colors.inkMuted, marginTop: 2 }}>{thaiFull(v.entry_date)} · {note}</div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 15, color: v.status === 'paid' ? colors.inkFaint : colors.ink, textDecoration: v.status === 'paid' ? 'line-through' : 'none' }}>
-                      {baht(v.status === 'paid' ? v.amount : v.remaining)}
-                    </div>
-                    <div style={{ marginTop: 4 }}>
-                      <StatusBadge status={v.status} label={v.status === 'partial' ? 'บางส่วน' : undefined} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {views.map((v) => (
+              <EntryCard key={v.id} entry={v} installments={installmentsByEntry.get(v.id) ?? []} readOnly />
+            ))}
             {views.length === 0 && (
               <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0' }}>ยังไม่มีรายการ</div>
             )}

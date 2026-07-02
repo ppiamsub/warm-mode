@@ -28,7 +28,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .eq('person_id', params.id)
     .order('entry_date', { ascending: false });
 
-  return NextResponse.json({ person, entries: entries ?? [] });
+  const entryIds = (entries ?? []).map((e) => e.id);
+  let installments: unknown[] = [];
+  if (entryIds.length) {
+    const { data } = await db
+      .from('installments')
+      .select('id, entry_id, seq, amount, due_date, paid, paid_at, created_at')
+      .in('entry_id', entryIds)
+      .order('seq', { ascending: true });
+    installments = data ?? [];
+  }
+
+  return NextResponse.json({ person, entries: entries ?? [], installments });
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {

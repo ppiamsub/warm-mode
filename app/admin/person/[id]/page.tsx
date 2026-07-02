@@ -6,11 +6,12 @@ import { colors, font, gradients } from '@/lib/theme';
 import { toEntryView } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { SummaryCard } from '@/components/SummaryCard';
-import { EntryRow } from '@/components/EntryRow';
+import { EntryCard } from '@/components/EntryCard';
 import { PaymentSheet } from '@/components/PaymentSheet';
 import { AddEntrySheet } from '@/components/AddEntrySheet';
+import { InstallmentPlanSheet } from '@/components/InstallmentPlanSheet';
 import { IconBack, IconPlus } from '@/components/ui/Icons';
-import type { Entry, EntryView, Person } from '@/types';
+import type { Entry, EntryView, Installment, Person } from '@/types';
 
 export default function PersonDetailPage() {
   const router = useRouter();
@@ -18,8 +19,10 @@ export default function PersonDetailPage() {
 
   const [person, setPerson] = useState<Person | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<EntryView | null>(null);
+  const [planFor, setPlanFor] = useState<EntryView | null>(null);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -30,12 +33,74 @@ export default function PersonDetailPage() {
         const data = await res.json();
         setPerson(data.person);
         setEntries(data.entries);
+        setInstallments(data.installments ?? []);
       } else if (res.status === 401 || res.status === 403) {
         router.replace('/');
       }
     } finally {
       setLoading(false);
     }
+  };
+
+  // งวดผ่อนจัดกลุ่มตาม entry
+  const installmentsByEntry = useMemo(() => {
+    const m = new Map<string, Installment[]>();
+    for (const ins of installments) {
+      const arr = m.get(ins.entry_id) ?? [];
+      arr.push(ins);
+      m.set(ins.entry_id, arr);
+    }
+    return m;
+  }, [installments]);
+
+  // สร้างแผนผ่อน
+  const submitPlan = async (data: { count: number; startDate: string }) => {
+    if (!planFor) return;
+    const res = await fetch(`/api/entries/${planFor.id}/plan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      setPlanFor(null);
+      await load();
+    } else {
+      window.alert('สร้างแผนไม่สำเร็จ');
+    }
+  };
+
+  // เก็บ/ยกเลิกงวด
+  const toggleInstallment = async (ins: Installment) => {
+    await fetch(`/api/installments/${ins.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paid: !ins.paid }),
+    });
+    await load();
+  };
+
+  // แก้ไขยอดงวด
+  const editInstallment = async (ins: Installment) => {
+    const input = window.prompt(`แก้ไขยอดงวดที่ ${ins.seq} (บาท)`, String(ins.amount));
+    if (input == null) return;
+    const amount = Number(input.replace(/[^\d.]/g, ''));
+    if (!amount || amount <= 0) {
+      window.alert('ยอดต้องมากกว่า 0');
+      return;
+    }
+    await fetch(`/api/installments/${ins.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount }),
+    });
+    await load();
+  };
+
+  // ยกเลิกแผนผ่อน
+  const deletePlan = async (entryId: string) => {
+    if (!window.confirm('ยกเลิกแผนผ่อนของรายการนี้?')) return;
+    await fetch(`/api/entries/${entryId}/plan`, { method: 'DELETE' });
+    await load();
   };
 
   useEffect(() => {
@@ -142,7 +207,16 @@ export default function PersonDetailPage() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {views.map((v) => (
-              <EntryRow key={v.id} entry={v} onClick={() => setEditing(v)} />
+              <EntryCard
+                key={v.id}
+                entry={v}
+                installments={installmentsByEntry.get(v.id) ?? []}
+                onPay={() => setEditing(v)}
+                onCreatePlan={() => setPlanFor(v)}
+                onToggleInstallment={toggleInstallment}
+                onEditInstallment={editInstallment}
+                onDeletePlan={() => deletePlan(v.id)}
+              />
             ))}
             {views.length === 0 && (
               <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0' }}>ยังไม่มีรายการ</div>
@@ -166,6 +240,8 @@ export default function PersonDetailPage() {
         {editing && <PaymentSheet entry={editing} onClose={() => setEditing(null)} onSave={handleSave} />}
         {/* Bottom sheet เพิ่มรายการ */}
         {adding && <AddEntrySheet onClose={() => setAdding(false)} onSubmit={submitEntry} />}
+        {/* Bottom sheet สร้างแผนผ่อน */}
+        {planFor && <InstallmentPlanSheet total={planFor.amount} onClose={() => setPlanFor(null)} onSubmit={submitPlan} />}
       </div>
     </Phone>
   );

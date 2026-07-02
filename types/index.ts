@@ -46,6 +46,18 @@ export interface Entry {
   created_at: string;
 }
 
+// งวดผ่อนจ่ายของรายการ
+export interface Installment {
+  id: string;
+  entry_id: string;
+  seq: number;
+  amount: number;
+  due_date: string;
+  paid: boolean;
+  paid_at: string | null;
+  created_at: string;
+}
+
 // ── Session (HTTP-Only cookie) ────────────────────────────
 // ตัวตนหลัก = user (จาก LINE) · context ปัจจุบัน = บัญชีที่เลือกอยู่
 export interface Session {
