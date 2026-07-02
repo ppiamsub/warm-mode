@@ -1,52 +1,89 @@
-// /api/entries/:id — PATCH อัปเดต paid_amount (จ่ายครบ/บางส่วน) · DELETE ลบรายการ  [Admin]
+// /api/entries/:id — PATCH: จ่ายเงิน (paid_amount) หรือแก้ไขรายการ · DELETE ลบรายการ  [Admin]
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
+import { entryBookId } from '@/lib/installments';
+
+const SELECT = 'id, person_id, description, amount, paid_amount, entry_date, created_at';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  let session;
   try {
-    requireAdmin();
+    session = requireAdmin();
   } catch (res) {
     return res as NextResponse;
   }
 
-  let body: { paid_amount?: number };
+  let body: { paid_amount?: number; amount?: number; description?: string; entry_date?: string };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 });
   }
 
+  const db = getSupabaseAdmin();
+
+  // ตรวจว่ารายการอยู่ในบัญชีของ admin จริง
+  const bookId = await entryBookId(db, params.id);
+  if (!bookId || bookId !== session.bookId) {
+    return NextResponse.json({ error: 'ไม่พบรายการในบัญชีนี้' }, { status: 404 });
+  }
+  const { data: entry } = await db.from('entries').select('amount, paid_amount').eq('id', params.id).maybeSingle();
+  if (!entry) return NextResponse.json({ error: 'ไม่พบรายการ' }, { status: 404 });
+
+  // ── โหมดแก้ไขรายการ (ยอด/รายละเอียด/วันที่) — เฉพาะเมื่อยังไม่มีการจ่าย ──
+  const isEdit = body.amount != null || body.description != null || body.entry_date != null;
+  if (isEdit) {
+    if (Number(entry.paid_amount) > 0) {
+      return NextResponse.json({ error: 'แก้ไขไม่ได้ — มีการจ่ายแล้ว' }, { status: 409 });
+    }
+    const { count } = await db
+      .from('installments')
+      .select('id', { count: 'exact', head: true })
+      .eq('entry_id', params.id);
+    if ((count ?? 0) > 0) {
+      return NextResponse.json({ error: 'แก้ไขไม่ได้ — มีแผนผ่อนอยู่ กรุณายกเลิกแผนก่อน' }, { status: 409 });
+    }
+
+    const patch: Record<string, unknown> = {};
+    if (body.amount != null) {
+      if (body.amount <= 0) return NextResponse.json({ error: 'ยอดต้องมากกว่า 0' }, { status: 400 });
+      patch.amount = body.amount;
+    }
+    if (body.description != null) {
+      if (!body.description.trim()) return NextResponse.json({ error: 'ต้องมีรายละเอียด' }, { status: 400 });
+      patch.description = body.description.trim();
+    }
+    if (body.entry_date != null) patch.entry_date = body.entry_date;
+
+    const { data, error } = await db.from('entries').update(patch).eq('id', params.id).select(SELECT).single();
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data);
+  }
+
+  // ── โหมดจ่ายเงิน (paid_amount) ──
   const paid = body.paid_amount;
-  // paid_amount ต้อง >= 0 (กฎเหล็ก DB Agent)
   if (paid == null || paid < 0) {
     return NextResponse.json({ error: 'paid_amount ต้อง >= 0' }, { status: 400 });
   }
-
-  const db = getSupabaseAdmin();
-
-  // กันจ่ายเกินยอดเต็ม: clamp ไม่ให้เกิน amount
-  const { data: entry } = await db.from('entries').select('amount').eq('id', params.id).maybeSingle();
-  if (!entry) return NextResponse.json({ error: 'ไม่พบรายการ' }, { status: 404 });
-  const clamped = Math.min(paid, Number(entry.amount));
-
-  const { data, error } = await db
-    .from('entries')
-    .update({ paid_amount: clamped })
-    .eq('id', params.id)
-    .select('id, person_id, description, amount, paid_amount, entry_date, created_at')
-    .single();
+  const clamped = Math.min(paid, Number(entry.amount)); // กันจ่ายเกินยอดเต็ม
+  const { data, error } = await db.from('entries').update({ paid_amount: clamped }).eq('id', params.id).select(SELECT).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  let session;
   try {
-    requireAdmin();
+    session = requireAdmin();
   } catch (res) {
     return res as NextResponse;
   }
   const db = getSupabaseAdmin();
+  const bookId = await entryBookId(db, params.id);
+  if (!bookId || bookId !== session.bookId) {
+    return NextResponse.json({ error: 'ไม่พบรายการในบัญชีนี้' }, { status: 404 });
+  }
   const { error } = await db.from('entries').delete().eq('id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

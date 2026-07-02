@@ -16,6 +16,7 @@ export function EntryCard({
   onToggleInstallment,
   onEditInstallment,
   onDeletePlan,
+  onEdit,
 }: {
   entry: EntryView;
   installments: Installment[];
@@ -25,8 +26,11 @@ export function EntryCard({
   onToggleInstallment?: (inst: Installment) => void;
   onEditInstallment?: (inst: Installment) => void;
   onDeletePlan?: () => void;
+  onEdit?: () => void;
 }) {
   const hasPlan = installments.length > 0;
+  // แก้ไขรายการได้เฉพาะเมื่อยังไม่มีการจ่าย และไม่มีแผนผ่อน
+  const editable = !readOnly && entry.paid_amount === 0 && !hasPlan;
 
   return (
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(16,40,28,.04)' }}>
@@ -36,7 +40,12 @@ export function EntryCard({
           <div style={{ fontSize: 15, fontWeight: 600, color: colors.ink }}>{entry.description}</div>
           <div style={{ fontSize: 12, color: colors.inkMuted, marginTop: 3 }}>{thaiFull(entry.entry_date)}</div>
         </div>
-        <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 16, color: colors.ink }}>{baht(entry.amount)}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {editable && onEdit && (
+            <button onClick={onEdit} style={{ fontSize: 12.5, color: colors.green, fontWeight: 600 }}>แก้ไข</button>
+          )}
+          <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 16, color: colors.ink }}>{baht(entry.amount)}</div>
+        </div>
       </div>
 
       <div style={{ marginTop: 12 }}>

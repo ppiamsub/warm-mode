@@ -12,13 +12,21 @@ function todayISO(): string {
 export function AddEntrySheet({
   onClose,
   onSubmit,
+  initial,
+  title = 'เพิ่มรายการ',
+  subtitle = 'บันทึกรายการที่ค้างชำระ',
+  submitLabel = 'เพิ่มรายการ',
 }: {
   onClose: () => void;
   onSubmit: (data: { description: string; amount: number; entry_date: string }) => Promise<void>;
+  initial?: { description: string; amount: number; entry_date: string };
+  title?: string;
+  subtitle?: string;
+  submitLabel?: string;
 }) {
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [entryDate, setEntryDate] = useState(todayISO());
+  const [description, setDescription] = useState(initial?.description ?? '');
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
+  const [entryDate, setEntryDate] = useState(initial?.entry_date ?? todayISO());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,8 +79,8 @@ export function AddEntrySheet({
         style={{ background: colors.surface, borderRadius: '28px 28px 0 0', padding: '10px 20px 30px', boxShadow: '0 -20px 50px rgba(0,0,0,.3)' }}
       >
         <div style={{ width: 40, height: 5, borderRadius: 999, background: '#d7ddd8', margin: '2px auto 16px' }} />
-        <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 20, color: colors.ink }}>เพิ่มรายการ</div>
-        <div style={{ fontSize: 13, color: colors.inkMuted, marginTop: 3 }}>บันทึกรายการที่ค้างชำระ</div>
+        <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 20, color: colors.ink }}>{title}</div>
+        <div style={{ fontSize: 13, color: colors.inkMuted, marginTop: 3 }}>{subtitle}</div>
 
         {/* รายละเอียด */}
         <div style={labelStyle}>รายละเอียด</div>
@@ -125,7 +133,7 @@ export function AddEntrySheet({
             disabled={busy || !valid}
             style={{ flex: 1.4, height: 52, borderRadius: 15, background: gradients.brand, color: '#fff', fontFamily: font.display, fontWeight: 600, fontSize: 15.5, boxShadow: '0 10px 22px rgba(31,138,91,.3)', opacity: busy || !valid ? 0.6 : 1 }}
           >
-            เพิ่มรายการ
+            {submitLabel}
           </button>
         </div>
       </div>

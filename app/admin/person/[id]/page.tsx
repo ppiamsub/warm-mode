@@ -23,6 +23,7 @@ export default function PersonDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<EntryView | null>(null);
   const [planFor, setPlanFor] = useState<EntryView | null>(null);
+  const [editEntry, setEditEntry] = useState<EntryView | null>(null);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -101,6 +102,23 @@ export default function PersonDetailPage() {
     if (!window.confirm('ยกเลิกแผนผ่อนของรายการนี้?')) return;
     await fetch(`/api/entries/${entryId}/plan`, { method: 'DELETE' });
     await load();
+  };
+
+  // แก้ไขรายการ (ยอด/รายละเอียด/วันที่) — ได้เฉพาะเมื่อยังไม่มีการจ่าย
+  const submitEditEntry = async (data: { description: string; amount: number; entry_date: string }) => {
+    if (!editEntry) return;
+    const res = await fetch(`/api/entries/${editEntry.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) {
+      setEditEntry(null);
+      await load();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      window.alert(d.error || 'แก้ไขไม่สำเร็จ');
+    }
   };
 
   useEffect(() => {
@@ -216,6 +234,7 @@ export default function PersonDetailPage() {
                 onToggleInstallment={toggleInstallment}
                 onEditInstallment={editInstallment}
                 onDeletePlan={() => deletePlan(v.id)}
+                onEdit={() => setEditEntry(v)}
               />
             ))}
             {views.length === 0 && (
@@ -242,6 +261,17 @@ export default function PersonDetailPage() {
         {adding && <AddEntrySheet onClose={() => setAdding(false)} onSubmit={submitEntry} />}
         {/* Bottom sheet สร้างแผนผ่อน */}
         {planFor && <InstallmentPlanSheet total={planFor.amount} onClose={() => setPlanFor(null)} onSubmit={submitPlan} />}
+        {/* Bottom sheet แก้ไขรายการ (เฉพาะยังไม่จ่าย) */}
+        {editEntry && (
+          <AddEntrySheet
+            initial={{ description: editEntry.description, amount: editEntry.amount, entry_date: editEntry.entry_date }}
+            title="แก้ไขรายการ"
+            subtitle="แก้ไขได้เฉพาะรายการที่ยังไม่มีการจ่าย"
+            submitLabel="บันทึก"
+            onClose={() => setEditEntry(null)}
+            onSubmit={submitEditEntry}
+          />
+        )}
       </div>
     </Phone>
   );
