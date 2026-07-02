@@ -6,14 +6,20 @@ import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { IconPlus } from '@/components/ui/Icons';
+import { useLiff } from '@/components/LiffProvider';
 import type { Account } from '@/types';
 
 export default function AccountHubPage() {
   const router = useRouter();
+  const { profile } = useLiff();
   const [joining, setJoining] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [userName, setUserName] = useState('ผู้ใช้');
   const [loading, setLoading] = useState(true);
+
+  // ชื่อ + รูปจาก LINE (fallback เป็นชื่อจาก DB / ตัวอักษรแรก)
+  const displayName = profile?.displayName ?? userName;
+  const pictureUrl = profile?.pictureUrl;
 
   // โหลดรายการบัญชีจริงจาก DB
   useEffect(() => {
@@ -70,26 +76,36 @@ export default function AccountHubPage() {
         {/* Header */}
         <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 26px', color: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div
-              style={{
-                width: 46,
-                height: 46,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,.2)',
-                border: '1px solid rgba(255,255,255,.28)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontFamily: font.display,
-                fontWeight: 600,
-                fontSize: 19,
-              }}
-            >
-              {userName.charAt(0)}
-            </div>
+            {pictureUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pictureUrl}
+                alt={displayName}
+                referrerPolicy="no-referrer"
+                style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,.5)' }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,.2)',
+                  border: '1px solid rgba(255,255,255,.28)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: font.display,
+                  fontWeight: 600,
+                  fontSize: 19,
+                }}
+              >
+                {displayName.charAt(0)}
+              </div>
+            )}
             <div>
               <div style={{ fontSize: 12.5, opacity: 0.85 }}>เข้าสู่ระบบด้วย LINE แล้ว</div>
-              <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 18 }}>{userName}</div>
+              <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 18 }}>{displayName}</div>
             </div>
           </div>
           <div style={{ marginTop: 20, fontFamily: font.display, fontWeight: 700, fontSize: 22 }}>เลือกบัญชี</div>
