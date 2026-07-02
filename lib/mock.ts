@@ -31,7 +31,7 @@ export const MOCK_UPDATED: Record<string, string> = {
   p4: 'อัปเดต 28 มิ.ย.',
 };
 
-// รายการหนี้ต่อคน
+// รายการต่อคน
 export const MOCK_ENTRIES: Record<string, Entry[]> = {
   p1: [
     { id: 'e1', person_id: 'p1', description: 'ค่าของชำ', amount: 5000, paid_amount: 5000, entry_date: '2025-06-15', created_at: '2025-06-15' },

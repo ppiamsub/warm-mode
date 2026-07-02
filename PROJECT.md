@@ -1,6 +1,6 @@
 # เอกสารออกแบบระบบ: Debt Ledger — สมุดเก็บเงิน (พร้อมระบบ LINE Login)
 
-เอกสารการออกแบบสถาปัตยกรรมระบบติดตามยอดเงินที่ต้องเก็บจากลูกหนี้ พร้อมระบบ Invite Code และผูกบัญชีผ่าน **LINE Login (LIFF)** เพื่อแยกสิทธิ์การเข้าถึงระหว่าง Admin และ Viewer อย่างชัดเจน และให้ผู้ใช้เข้าใช้งานได้สะดวกที่สุด
+เอกสารการออกแบบสถาปัตยกรรมระบบติดตามยอดเงินที่ต้องเก็บจากสมาชิก พร้อมระบบ Invite Code และผูกบัญชีผ่าน **LINE Login (LIFF)** เพื่อแยกสิทธิ์การเข้าถึงระหว่าง Admin และ Viewer อย่างชัดเจน และให้ผู้ใช้เข้าใช้งานได้สะดวกที่สุด
 
 ---
 
@@ -19,19 +19,19 @@
 ### 1.2 บทบาทผู้ใช้ในแต่ละบัญชี (Roles per Membership)
 | บทบาท (Role) | ได้มาโดย | สิทธิ์การใช้งาน (Permissions) |
 | :--- | :--- | :--- |
-| **Admin** (เจ้าหนี้) | สร้างบัญชีใหม่ **หรือ** กรอก **โค้ดบัญชีหลัก (Book Code)** เพื่อเข้าร่วมเป็นผู้ดูแลร่วม | จัดการข้อมูลทั้งหมด: เพิ่ม/ลบคน, เพิ่ม/ลบรายการหนี้, อัปเดตสถานะการจ่ายเงิน และดูสรุปยอดของทุกคน |
-| **Viewer** (ลูกหนี้) | กรอก **โค้ดส่วนตัว (Personal Code)** เพื่อผูกตัวเองกับรายชื่อในบัญชี | ดูยอดหนี้และประวัติการจ่ายเงินของตัวเองเท่านั้น ไม่สามารถแก้ไขข้อมูลใดๆ ได้ |
+| **Admin** (ผู้ดูแล) | สร้างบัญชีใหม่ **หรือ** กรอก **โค้ดบัญชีหลัก (Book Code)** เพื่อเข้าร่วมเป็นผู้ดูแลร่วม | จัดการข้อมูลทั้งหมด: เพิ่ม/ลบคน, เพิ่ม/ลบรายการ, อัปเดตสถานะการจ่ายเงิน และดูสรุปยอดของทุกคน |
+| **Viewer** (สมาชิก) | กรอก **โค้ดส่วนตัว (Personal Code)** เพื่อผูกตัวเองกับรายชื่อในบัญชี | ดูยอดค้างชำระและประวัติการจ่ายเงินของตัวเองเท่านั้น ไม่สามารถแก้ไขข้อมูลใดๆ ได้ |
 
 ### 1.3 กติกาหลักของระบบ (Core Rules)
 - **Multi-Account Membership:** 1 LINE user (`users`) เป็นสมาชิกได้หลายบัญชี ผ่านตาราง `memberships` (user × book × role) — เป็น Admin ของบัญชีตัวเอง และเป็น Viewer/Admin ในบัญชีคนอื่นได้พร้อมกัน
-- **Data Hierarchy:** 1 บัญชีหลัก (Book) มีลูกหนี้ได้หลายคน (People) และลูกหนี้แต่ละคนมีรายการหนี้ได้หลายรายการ (Entries)
+- **Data Hierarchy:** 1 บัญชีหลัก (Book) มีสมาชิกได้หลายคน (People) และสมาชิกแต่ละคนมีรายการได้หลายรายการ (Entries)
 - **LINE Integration (Login):**
   - ต้อง Login ผ่าน LINE (LIFF) เสมอ ระบบดึง `line_uid` มา upsert ตาราง `users`
   - หลัง login พาเข้า **หน้าเลือกบัญชี (Account Hub)** เสมอ — ไม่ข้ามไป Dashboard อัตโนมัติ (เพราะมีได้หลายบัญชี)
   - การเข้าร่วมบัญชีใหม่ทำได้จาก hub: สร้างบัญชีเอง หรือกรอกโค้ด (Book Code = Admin, Personal Code = Viewer)
 - **Payment Tracking:** รองรับการจ่ายบางส่วน (Partial Payment) โดยเก็บ "ยอดเต็ม (Amount)" และ "ยอดที่จ่ายแล้ว (Paid Amount)"
 - **On-the-fly Calculation:** ยอดค้างชำระ (Remaining) คำนวณสดจาก `Amount - Paid Amount` ฝั่ง Application/Query
-- **Cascade Deletion:** ลบรายชื่อบุคคล (Person) ออกจากบัญชี ➔ รายการหนี้ (Entries) ของคนนั้นจะถูกลบทิ้งทั้งหมด
+- **Cascade Deletion:** ลบรายชื่อบุคคล (Person) ออกจากบัญชี ➔ รายการ (Entries) ของคนนั้นจะถูกลบทิ้งทั้งหมด
 
 ---
 
@@ -56,7 +56,7 @@ CREATE TABLE books (
   created_at TIMESTAMP DEFAULT now()
 );
 
--- 3. ตารางรายชื่อลูกหนี้ในบัญชี
+-- 3. ตารางรายชื่อสมาชิกในบัญชี
 CREATE TABLE people (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   book_id UUID REFERENCES books(id) ON DELETE CASCADE,
@@ -77,7 +77,7 @@ CREATE TABLE memberships (
   UNIQUE (user_id, book_id) -- 1 user มีได้ 1 บทบาทต่อบัญชี
 );
 
--- 5. ตารางรายการหนี้สิน
+-- 5. ตารางรายการ
 CREATE TABLE entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   person_id UUID REFERENCES people(id) ON DELETE CASCADE,
@@ -111,7 +111,7 @@ debt-ledger/
 │   ├── page.tsx                   # หน้าแรก (Login ด้วย LINE เสมอ)
 │   ├── accounts/page.tsx          # หน้าเลือกบัญชี (Hub) + สร้าง/เข้าร่วมด้วยโค้ด
 │   ├── admin/page.tsx             # Dashboard สำหรับ Admin
-│   ├── viewer/page.tsx            # หน้าแสดงยอดหนี้ส่วนตัวสำหรับ Viewer
+│   ├── viewer/page.tsx            # หน้าแสดงยอดค้างชำระส่วนตัวสำหรับ Viewer
 │   └── api/
 │       ├── auth/line/route.ts     # upsert users จาก line_uid ➔ คืน Session + memberships
 │       ├── accounts/route.ts      # ดึงรายการบัญชีของผู้ใช้ (Hub)
@@ -119,7 +119,7 @@ debt-ledger/
 │       ├── books/route.ts         # สร้างบัญชีใหม่ + membership Admin
 │       ├── join/route.ts          # เข้าร่วมด้วยโค้ด (Book/Personal Code)
 │       ├── people/route.ts        # API สำหรับ CRUD คน
-│       └── entries/route.ts       # API สำหรับ CRUD รายการหนี้
+│       └── entries/route.ts       # API สำหรับ CRUD รายการ
 ├── components/
 │   ├── LiffProvider.tsx           # Context Provider สำหรับ Initialize LINE LIFF
 │   ├── PersonCard.tsx             
@@ -149,9 +149,9 @@ debt-ledger/
 | `POST` | `/api/join` | กรอกโค้ดเข้าร่วม ➔ Book Code=Admin / Personal Code=Viewer ➔ สร้าง membership |
 | `POST` | `/api/people` | เพิ่มคนลงในบัญชี พร้อม Gen `personal_code` |
 | `DELETE` | `/api/people/:id` | ลบรายชื่อคน (Cascade ลบ entries ด้วย) |
-| `POST` | `/api/entries` | เพิ่มรายการหนี้ใหม่ |
+| `POST` | `/api/entries` | เพิ่มรายการใหม่ |
 | `PATCH` | `/api/entries/:id` | อัปเดตยอดจ่าย `paid_amount` (จ่ายครบ/บางส่วน) |
-| `DELETE` | `/api/entries/:id` | ลบรายการหนี้ทิ้ง |
+| `DELETE` | `/api/entries/:id` | ลบรายการทิ้ง |
 
 ---
 
@@ -185,7 +185,7 @@ debt-ledger/
 
 ### 2026-07-02
 - Implement ดีไซน์ `Debt Ledger.dc.html` เป็น Next.js 14 (App Router) + LIFF + Supabase — 5 หน้าจอ
-- เปลี่ยนคำเรียกทั้งระบบ: **เจ้าหนี้ → ผู้ดูแล**, **ลูกหนี้ → สมาชิก**
+- เปลี่ยนคำเรียกผู้ใช้ทั้งระบบเป็น **ผู้ดูแล** และ **สมาชิก** (เลิกใช้คำเดิม)
 - ต่อ Supabase จริง (`@supabase/ssr`, publishable key, middleware refresh session)
 
 ### 2026-07-03
@@ -198,3 +198,5 @@ debt-ledger/
 - แสดง **รูปโปรไฟล์ + ชื่อ LINE** ที่หน้า Hub
 - ปรับดีไซน์หน้า Hub: ปุ่มออกจากระบบ, section label, empty state, divider "เพิ่มบัญชี"
 - **ข้อตกลงการทำงาน:** ต่อไปคำสั่ง/การตัดสินใจสำคัญ ให้บันทึกใน Change Log นี้เสมอ เพื่อ track ย้อนหลัง
+- หน้าเพิ่มรายการ: เปลี่ยนจาก `prompt` เป็นฟอร์ม bottom sheet (รายละเอียด + ยอด + **วันที่ default = วันนี้**)
+- ลบคำภาษาไทยที่แปลว่า debt ออกจากทุกข้อความทั้งระบบ (UI + เอกสาร) — ใช้ **"รายการ"** และ **"ยอดค้างชำระ"** แทน

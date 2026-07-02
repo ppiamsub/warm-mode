@@ -1,4 +1,4 @@
-// /api/entries — GET รายการของบุคคล · POST เพิ่มรายการหนี้ใหม่  [Admin]
+// /api/entries — GET รายการของบุคคล · POST เพิ่มรายการใหม่  [Admin]
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireSession, requireAdmin } from '@/lib/guard';

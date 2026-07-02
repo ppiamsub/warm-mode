@@ -1,5 +1,5 @@
 'use client';
-// การ์ดรายการหนี้ 1 รายการ (หน้ารายละเอียดสมาชิกฝั่ง Admin)
+// การ์ดรายการ 1 รายการ (หน้ารายละเอียดสมาชิกฝั่ง Admin)
 import React from 'react';
 import { colors, font, statusLabel } from '@/lib/theme';
 import { baht } from '@/lib/calc';

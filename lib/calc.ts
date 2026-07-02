@@ -16,7 +16,7 @@ export function toEntryView(entry: Entry): EntryView {
   return { ...entry, remaining, progress, status: statusOf(entry.amount, entry.paid_amount) };
 }
 
-/** รวมยอดของบุคคลจากรายการหนี้ทั้งหมด */
+/** รวมยอดของบุคคลจากรายการทั้งหมด */
 export function summarize(
   person: { id: string; name: string },
   entries: Entry[],

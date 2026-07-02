@@ -8,6 +8,7 @@ import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { SummaryCard } from '@/components/SummaryCard';
 import { EntryRow } from '@/components/EntryRow';
 import { PaymentSheet } from '@/components/PaymentSheet';
+import { AddEntrySheet } from '@/components/AddEntrySheet';
 import { IconBack, IconPlus } from '@/components/ui/Icons';
 import type { Entry, EntryView, Person } from '@/types';
 
@@ -19,6 +20,7 @@ export default function PersonDetailPage() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<EntryView | null>(null);
+  const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
@@ -67,27 +69,18 @@ export default function PersonDetailPage() {
     }
   };
 
-  // เพิ่มรายการหนี้ ➔ POST /api/entries
-  const addEntry = async () => {
-    const description = window.prompt('รายละเอียดรายการหนี้');
-    if (!description?.trim()) return;
-    const amountStr = window.prompt('จำนวนเงิน (บาท)');
-    const amount = Number((amountStr || '').replace(/[^\d.]/g, ''));
-    if (!amount || amount <= 0) {
-      window.alert('จำนวนเงินต้องมากกว่า 0');
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch('/api/entries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ person_id: id, description: description.trim(), amount }),
-      });
-      if (res.ok) await load();
-      else window.alert('เพิ่มไม่สำเร็จ');
-    } finally {
-      setBusy(false);
+  // เพิ่มรายการ ➔ POST /api/entries (รับ รายละเอียด + ยอด + วันที่)
+  const submitEntry = async (data: { description: string; amount: number; entry_date: string }) => {
+    const res = await fetch('/api/entries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ person_id: id, ...data }),
+    });
+    if (res.ok) {
+      setAdding(false);
+      await load();
+    } else {
+      window.alert('เพิ่มไม่สำเร็จ');
     }
   };
 
@@ -143,7 +136,7 @@ export default function PersonDetailPage() {
           <SummaryCard remaining={remaining} paid={paid} total={total} />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '18px 2px 12px' }}>
-            <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink }}>รายการหนี้</div>
+            <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink }}>รายการ</div>
             <div style={{ fontSize: 12.5, color: colors.inkMuted }}>{views.length} รายการ</div>
           </div>
 
@@ -152,7 +145,7 @@ export default function PersonDetailPage() {
               <EntryRow key={v.id} entry={v} onClick={() => setEditing(v)} />
             ))}
             {views.length === 0 && (
-              <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0' }}>ยังไม่มีรายการหนี้</div>
+              <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0' }}>ยังไม่มีรายการ</div>
             )}
           </div>
         </ScrollArea>
@@ -160,17 +153,19 @@ export default function PersonDetailPage() {
         {/* ปุ่มเพิ่มรายการ */}
         <div style={{ flex: 'none', background: colors.surface, borderTop: `1px solid ${colors.border}`, padding: '12px 16px 28px' }}>
           <button
-            onClick={addEntry}
+            onClick={() => setAdding(true)}
             disabled={busy}
             style={{ width: '100%', height: 52, borderRadius: 15, background: gradients.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#fff', fontFamily: font.display, fontWeight: 600, fontSize: 16, boxShadow: '0 10px 22px rgba(31,138,91,.28)', opacity: busy ? 0.7 : 1 }}
           >
             <IconPlus size={18} color="#fff" />
-            เพิ่มรายการหนี้
+            เพิ่มรายการ
           </button>
         </div>
 
         {/* Bottom sheet อัปเดตการจ่าย */}
         {editing && <PaymentSheet entry={editing} onClose={() => setEditing(null)} onSave={handleSave} />}
+        {/* Bottom sheet เพิ่มรายการ */}
+        {adding && <AddEntrySheet onClose={() => setAdding(false)} onSubmit={submitEntry} />}
       </div>
     </Phone>
   );

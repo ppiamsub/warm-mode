@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS books (
   created_at TIMESTAMP DEFAULT now()
 );
 
--- 3. รายชื่อลูกหนี้ในบัญชี
+-- 3. รายชื่อสมาชิกในบัญชี
 CREATE TABLE IF NOT EXISTS people (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   book_id UUID REFERENCES books(id) ON DELETE CASCADE,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS memberships (
   UNIQUE (user_id, book_id)           -- 1 user มีได้ 1 บทบาทต่อบัญชี
 );
 
--- 5. รายการหนี้สิน
+-- 5. รายการ
 CREATE TABLE IF NOT EXISTS entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   person_id UUID REFERENCES people(id) ON DELETE CASCADE,
