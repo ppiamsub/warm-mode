@@ -33,7 +33,7 @@ export function EntryCard({
   const editable = !readOnly && entry.paid_amount === 0 && !hasPlan;
 
   return (
-    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(16,40,28,.04)' }}>
+    <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)' }}>
       {/* หัวรายการ */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>

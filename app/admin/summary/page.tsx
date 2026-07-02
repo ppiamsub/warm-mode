@@ -141,7 +141,7 @@ export default function SummaryPage() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {buckets.map((b) => (
-                <div key={b.key} style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(16,40,28,.04)' }}>
+                <div key={b.key} style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 15, color: colors.ink }}>{b.label}</div>
                     <div style={{ fontSize: 12, color: colors.inkMuted }}>{b.count} รายการ</div>

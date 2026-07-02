@@ -26,7 +26,7 @@ export function SummaryCard({
         borderRadius: 20,
         padding: 18,
         border: `1px solid ${colors.borderSoft}`,
-        boxShadow: floating ? '0 14px 32px rgba(16,40,28,.12)' : '0 1px 2px rgba(16,40,28,.04)',
+        boxShadow: floating ? '0 14px 32px rgba(16,40,28,.12)' : '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)',
         marginTop: floating ? -38 : 0,
       }}
     >

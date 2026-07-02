@@ -11,10 +11,12 @@ body {
 }
 
 body {
-  background: #e6ebe6;
+  background: #e4ede7;
   font-family: 'IBM Plex Sans Thai', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
-  color: #14231c;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color: #122019;
 }
 
 /* กรอบมือถือกลางจอเมื่อเปิดบน desktop (LIFF จะเต็มจอบนมือถือจริง) */
@@ -22,14 +24,17 @@ body {
   min-height: 100dvh;
   display: flex;
   justify-content: center;
-  background: radial-gradient(1200px 600px at 20% -10%, #eef4ef 0%, #e6ebe6 60%);
+  background:
+    radial-gradient(900px 480px at 15% -8%, rgba(46, 190, 128, 0.1) 0%, rgba(46, 190, 128, 0) 55%),
+    radial-gradient(760px 520px at 92% 8%, rgba(12, 106, 64, 0.08) 0%, rgba(12, 106, 64, 0) 50%),
+    linear-gradient(160deg, #eef6f0 0%, #e6efe9 52%, #dfe9e2 100%);
 }
 
 .phone {
   width: 100%;
   max-width: 440px;
   min-height: 100dvh;
-  background: #eef4ef;
+  background: #eef5f0;
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 60px rgba(16, 40, 28, 0.08);
@@ -37,11 +42,17 @@ body {
 
 @media (min-width: 460px) {
   .phone {
-    margin: 24px 0;
+    margin: 26px 0;
     min-height: auto;
-    height: calc(100dvh - 48px);
-    border-radius: 40px;
-    border: 1px solid rgba(16, 40, 28, 0.06);
+    height: calc(100dvh - 52px);
+    border-radius: 42px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    /* เงาเลเยอร์ + ขอบเรืองแสงบาง ๆ ให้เครื่องลอยดูพรีเมียม */
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.7) inset,
+      0 30px 70px -24px rgba(10, 60, 38, 0.35),
+      0 12px 30px -12px rgba(10, 60, 38, 0.2),
+      0 0 0 1px rgba(12, 44, 28, 0.04);
   }
 }
 

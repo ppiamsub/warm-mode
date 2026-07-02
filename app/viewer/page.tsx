@@ -120,7 +120,7 @@ export default function ViewerPage() {
 
           {/* ประวัติการจ่าย */}
           <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink, margin: '20px 2px 12px' }}>ประวัติการจ่าย</div>
-          <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: '4px 16px', boxShadow: '0 1px 2px rgba(16,40,28,.04)' }}>
+          <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: '4px 16px', boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)' }}>
             {history.map((v, i) => (
               <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: i < history.length - 1 ? `1px solid ${colors.borderSoft}` : 'none' }}>
                 <div style={{ width: 34, height: 34, borderRadius: '50%', background: colors.paidBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
