@@ -175,4 +175,26 @@ debt-ledger/
 7. [x] เปิด RLS บนทุกตาราง (API ใช้ service_role + บังคับสิทธิ์ผ่าน session cookie) · ทดสอบ end-to-end ผ่าน (create/join/pay/add)
 8. [ ] สร้าง LINE Login Channel + LIFF ID จริง (ตอนนี้ใช้ dev-login แทนในโหมด mock)
 9. [ ] ทดสอบ Edge Cases (ล็อกอินเครื่องอื่น, ถอนสิทธิ์แอป LINE, RLS policy ละเอียด)
-10. [ ] Deploy ขึ้น Vercel
+10. [~] Deploy ขึ้น Vercel (deploy แล้วที่ `https://warm-mode.vercel.app` — เหลือใส่ env vars บน Vercel)
+
+---
+
+## 8. บันทึกคำสั่ง & การเปลี่ยนแปลงสำคัญ (Change Log)
+
+> บันทึกคำสั่ง/การตัดสินใจสำคัญจากผู้ใช้ เพื่อ track ย้อนหลังได้ (ต่อท้ายเรื่อย ๆ)
+
+### 2026-07-02
+- Implement ดีไซน์ `Debt Ledger.dc.html` เป็น Next.js 14 (App Router) + LIFF + Supabase — 5 หน้าจอ
+- เปลี่ยนคำเรียกทั้งระบบ: **เจ้าหนี้ → ผู้ดูแล**, **ลูกหนี้ → สมาชิก**
+- ต่อ Supabase จริง (`@supabase/ssr`, publishable key, middleware refresh session)
+
+### 2026-07-03
+- **Redesign เป็น Multi-Account:** เพิ่มตาราง `users` + `memberships`, หน้า Hub เลือกบัญชี, login ผ่าน LINE ก่อนเสมอ
+- เข้าร่วมด้วยโค้ดตามชนิด: **Book Code → Admin**, **Personal Code → Viewer**
+- Admin สร้างบัญชีใหม่เองได้ (Gen `admin_code` + membership)
+- ต่อ Dashboard ทั้ง 3 หน้า (`/admin`, `/admin/person/[id]`, `/viewer`) ให้ดึงข้อมูลจริง + ปุ่มบันทึกจ่าย/เพิ่มรายการ/เพิ่มสมาชิก (เขียน DB จริง)
+- **Deploy Vercel:** เพิ่ม `vercel.json` (framework nextjs), harden middleware กัน crash เมื่อ env หาย — ต้องใส่ env vars บน Vercel (Supabase + `SESSION_SECRET` + `NEXT_PUBLIC_LIFF_ID`)
+- **LINE LIFF ID:** `2010579189-lrqE98iv` (Channel ID `2010579189`) — Endpoint URL ต้องตั้งเป็น URL ของ Vercel + scope `profile`,`openid`
+- แสดง **รูปโปรไฟล์ + ชื่อ LINE** ที่หน้า Hub
+- ปรับดีไซน์หน้า Hub: ปุ่มออกจากระบบ, section label, empty state, divider "เพิ่มบัญชี"
+- **ข้อตกลงการทำงาน:** ต่อไปคำสั่ง/การตัดสินใจสำคัญ ให้บันทึกใน Change Log นี้เสมอ เพื่อ track ย้อนหลัง

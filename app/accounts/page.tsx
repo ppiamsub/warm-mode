@@ -1,6 +1,6 @@
 'use client';
 // หน้าเลือกบัญชี (Account Hub) — หลัง Login LINE
-// แสดงบัญชีที่ผู้ใช้เป็นสมาชิก + สร้างบัญชีใหม่ + เข้าร่วมด้วยโค้ด
+// แสดงโปรไฟล์ LINE + บัญชีที่เป็นสมาชิก + สร้าง/เข้าร่วมด้วยโค้ด
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
@@ -11,7 +11,7 @@ import type { Account } from '@/types';
 
 export default function AccountHubPage() {
   const router = useRouter();
-  const { profile } = useLiff();
+  const { profile, mockMode } = useLiff();
   const [joining, setJoining] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [userName, setUserName] = useState('ผู้ใช้');
@@ -21,7 +21,6 @@ export default function AccountHubPage() {
   const displayName = profile?.displayName ?? userName;
   const pictureUrl = profile?.pictureUrl;
 
-  // โหลดรายการบัญชีจริงจาก DB
   useEffect(() => {
     (async () => {
       try {
@@ -39,7 +38,6 @@ export default function AccountHubPage() {
     })();
   }, []);
 
-  // เลือกบัญชี ➔ set context ลง session แล้วเข้า dashboard ตามบทบาท
   const selectAccount = async (acc: Account) => {
     try {
       await fetch('/api/accounts/select', {
@@ -48,7 +46,7 @@ export default function AccountHubPage() {
         body: JSON.stringify({ bookId: acc.bookId }),
       });
     } catch {
-      /* โหมด demo — ข้ามไปได้ */
+      /* โหมด demo */
     }
     router.push(acc.role === 'admin' ? '/admin' : '/viewer');
   };
@@ -70,159 +68,147 @@ export default function AccountHubPage() {
     router.push('/admin');
   };
 
+  const logout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST' });
+    } catch {
+      /* ignore */
+    }
+    if (!mockMode) {
+      try {
+        const liff = (await import('@line/liff')).default;
+        if (liff.isLoggedIn()) liff.logout();
+      } catch {
+        /* ignore */
+      }
+    }
+    router.replace('/');
+  };
+
   return (
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
-        {/* Header */}
-        <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 26px', color: '#fff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {pictureUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={pictureUrl}
-                alt={displayName}
-                referrerPolicy="no-referrer"
-                style={{ width: 46, height: 46, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,.5)' }}
-              />
-            ) : (
-              <div
-                style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: '50%',
-                  background: 'rgba(255,255,255,.2)',
-                  border: '1px solid rgba(255,255,255,.28)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: font.display,
-                  fontWeight: 600,
-                  fontSize: 19,
-                }}
-              >
-                {displayName.charAt(0)}
+        {/* ── Header + โปรไฟล์ LINE ── */}
+        <div style={{ flex: 'none', background: gradients.header, padding: '52px 20px 26px', color: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+              {pictureUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={pictureUrl}
+                  alt={displayName}
+                  referrerPolicy="no-referrer"
+                  style={{ width: 48, height: 48, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,255,255,.55)', flex: 'none' }}
+                />
+              ) : (
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font.display, fontWeight: 600, fontSize: 20, flex: 'none' }}>
+                  {displayName.charAt(0)}
+                </div>
+              )}
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 12, opacity: 0.82 }}>เข้าสู่ระบบด้วย LINE แล้ว</div>
+                <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
               </div>
-            )}
-            <div>
-              <div style={{ fontSize: 12.5, opacity: 0.85 }}>เข้าสู่ระบบด้วย LINE แล้ว</div>
-              <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 18 }}>{displayName}</div>
             </div>
+            <button
+              onClick={logout}
+              style={{ flex: 'none', padding: '7px 13px', borderRadius: 999, background: 'rgba(255,255,255,.16)', border: '1px solid rgba(255,255,255,.22)', color: '#fff', fontSize: 12.5, fontWeight: 600 }}
+            >
+              ออกจากระบบ
+            </button>
           </div>
-          <div style={{ marginTop: 20, fontFamily: font.display, fontWeight: 700, fontSize: 22 }}>เลือกบัญชี</div>
-          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>เลือกบัญชีที่ต้องการเข้าใช้งาน</div>
+          <div style={{ marginTop: 22, fontFamily: font.display, fontWeight: 700, fontSize: 23 }}>เลือกบัญชี</div>
+          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>เลือกบัญชีที่ต้องการเข้าใช้งาน หรือเพิ่มบัญชีใหม่</div>
         </div>
 
-        <ScrollArea style={{ padding: '18px 16px 20px' }}>
-          {/* รายการบัญชี */}
+        <ScrollArea style={{ padding: '18px 16px 24px' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '24px 0' }}>กำลังโหลด...</div>
-          ) : accounts.length === 0 ? (
-            <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0 4px', lineHeight: 1.6 }}>
-              ยังไม่มีบัญชี
-              <br />
-              เริ่มด้วยการสร้างบัญชีของคุณ หรือเข้าร่วมด้วยโค้ด
-            </div>
+            <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '40px 0' }}>กำลังโหลด...</div>
           ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {accounts.map((acc) => (
-              <button
-                key={acc.bookId}
-                onClick={() => selectAccount(acc)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 13,
-                  background: colors.surface,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: 18,
-                  padding: 16,
-                  boxShadow: '0 1px 2px rgba(16,40,28,.04)',
-                  width: '100%',
-                  textAlign: 'left',
-                }}
-              >
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    background: acc.role === 'admin' ? gradients.brandDiag : colors.paidBg,
-                    color: acc.role === 'admin' ? '#fff' : colors.green,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontFamily: font.display,
-                    fontWeight: 700,
-                    fontSize: 22,
-                    flex: 'none',
-                  }}
-                >
-                  {acc.bookName.charAt(0)}
+            <>
+              {/* section label */}
+              {accounts.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '2px 4px 12px' }}>
+                  <span style={{ fontFamily: font.display, fontWeight: 600, fontSize: 15, color: colors.ink }}>บัญชีของคุณ</span>
+                  <span style={{ fontSize: 12.5, color: colors.inkMuted }}>{accounts.length} บัญชี</span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontSize: 16, fontWeight: 600, color: colors.ink }}>{acc.bookName}</div>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: acc.role === 'admin' ? colors.green : colors.partialText,
-                        background: acc.role === 'admin' ? colors.paidBg : colors.partialBg,
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                      }}
-                    >
-                      {acc.role === 'admin' ? 'ผู้ดูแล' : 'สมาชิก'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12.5, color: colors.inkMuted, marginTop: 3 }}>{acc.subtitle}</div>
-                </div>
-                <div style={{ color: colors.inkFaint, fontSize: 20, flex: 'none' }}>›</div>
-              </button>
-            ))}
-          </div>
-          )}
+              )}
 
-          {/* ปุ่มสร้าง / เข้าร่วม */}
-          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button
-              onClick={createBook}
-              style={{
-                width: '100%',
-                height: 52,
-                borderRadius: 15,
-                background: gradients.brand,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                color: '#fff',
-                fontFamily: font.display,
-                fontWeight: 600,
-                fontSize: 15.5,
-                boxShadow: '0 10px 22px rgba(31,138,91,.28)',
-              }}
-            >
-              <IconPlus size={18} color="#fff" />
-              สร้างบัญชีของฉัน
-            </button>
-            <button
-              onClick={() => setJoining(true)}
-              style={{
-                width: '100%',
-                height: 52,
-                borderRadius: 15,
-                border: `1.5px solid ${colors.green}`,
-                background: colors.paidBg,
-                color: colors.green,
-                fontFamily: font.display,
-                fontWeight: 600,
-                fontSize: 15.5,
-              }}
-            >
-              🔑 เข้าร่วมบัญชีด้วยโค้ด
-            </button>
-          </div>
+              {/* empty state */}
+              {accounts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '28px 16px 24px', background: colors.surface, border: `1px dashed ${colors.border}`, borderRadius: 20 }}>
+                  <div style={{ width: 60, height: 60, borderRadius: 18, background: colors.paidBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, margin: '0 auto 14px' }}>📒</div>
+                  <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink }}>ยังไม่มีบัญชี</div>
+                  <div style={{ fontSize: 13, color: colors.inkMuted, marginTop: 4, lineHeight: 1.6 }}>
+                    เริ่มด้วยการสร้างบัญชีของคุณ
+                    <br />
+                    หรือเข้าร่วมบัญชีคนอื่นด้วยโค้ด
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {accounts.map((acc) => {
+                    const isAdmin = acc.role === 'admin';
+                    return (
+                      <button
+                        key={acc.bookId}
+                        onClick={() => selectAccount(acc)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 13,
+                          background: colors.surface,
+                          border: `1px solid ${colors.border}`,
+                          borderRadius: 18,
+                          padding: 15,
+                          boxShadow: '0 2px 8px rgba(16,40,28,.05)',
+                          width: '100%',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ width: 50, height: 50, borderRadius: 15, background: isAdmin ? gradients.brandDiag : colors.paidBg, color: isAdmin ? '#fff' : colors.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font.display, fontWeight: 700, fontSize: 23, flex: 'none' }}>
+                          {acc.bookName.charAt(0)}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ fontSize: 16, fontWeight: 600, color: colors.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.bookName}</div>
+                            <span style={{ flex: 'none', fontSize: 11, fontWeight: 600, color: isAdmin ? colors.green : colors.partialText, background: isAdmin ? colors.paidBg : colors.partialBg, padding: '2px 8px', borderRadius: 999 }}>
+                              {isAdmin ? 'ผู้ดูแล' : 'สมาชิก'}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: 12.5, color: colors.inkMuted, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.subtitle}</div>
+                        </div>
+                        <div style={{ color: colors.inkFaint, fontSize: 22, flex: 'none' }}>›</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* divider "เพิ่มบัญชี" */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '22px 2px 14px' }}>
+                <div style={{ flex: 1, height: 1, background: colors.border }} />
+                <span style={{ fontSize: 12.5, color: colors.inkFaint }}>เพิ่มบัญชี</span>
+                <div style={{ flex: 1, height: 1, background: colors.border }} />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button
+                  onClick={createBook}
+                  style={{ width: '100%', height: 52, borderRadius: 15, background: gradients.brand, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#fff', fontFamily: font.display, fontWeight: 600, fontSize: 15.5, boxShadow: '0 10px 22px rgba(31,138,91,.28)' }}
+                >
+                  <IconPlus size={18} color="#fff" />
+                  สร้างบัญชีของฉัน
+                </button>
+                <button
+                  onClick={() => setJoining(true)}
+                  style={{ width: '100%', height: 52, borderRadius: 15, border: `1.5px solid ${colors.green}`, background: colors.paidBg, color: colors.green, fontFamily: font.display, fontWeight: 600, fontSize: 15.5 }}
+                >
+                  🔑 เข้าร่วมบัญชีด้วยโค้ด
+                </button>
+              </div>
+            </>
+          )}
         </ScrollArea>
 
         {joining && <JoinSheet onClose={() => setJoining(false)} onJoined={(role) => router.push(role === 'admin' ? '/admin' : '/viewer')} />}
@@ -254,7 +240,6 @@ function JoinSheet({ onClose, onJoined }: { onClose: () => void; onJoined: (role
       const data = await res.json().catch(() => ({}));
       setError(data.error || 'เข้าร่วมไม่สำเร็จ');
     } catch {
-      // โหมด demo: เดาบทบาทจาก prefix (BK = admin, อื่น ๆ = viewer)
       onJoined(code.trim().toUpperCase().startsWith('BK') ? 'admin' : 'viewer');
       return;
     } finally {
@@ -278,16 +263,7 @@ function JoinSheet({ onClose, onJoined }: { onClose: () => void; onJoined: (role
         </div>
 
         <div
-          style={{
-            marginTop: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            border: `1.5px solid ${error ? colors.overdueText : '#bcd8c8'}`,
-            borderRadius: 14,
-            padding: '15px 16px',
-            background: '#f7fbf9',
-          }}
+          style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, border: `1.5px solid ${error ? colors.overdueText : '#bcd8c8'}`, borderRadius: 14, padding: '15px 16px', background: '#f7fbf9' }}
         >
           <span style={{ color: '#9fb3a8', fontFamily: font.display, fontWeight: 600, fontSize: 18 }}>#</span>
           <input
@@ -295,18 +271,7 @@ function JoinSheet({ onClose, onJoined }: { onClose: () => void; onJoined: (role
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             placeholder="เช่น BK-482913 หรือ SC-8842"
             autoFocus
-            style={{
-              flex: 1,
-              border: 'none',
-              outline: 'none',
-              background: 'transparent',
-              fontFamily: font.display,
-              fontWeight: 600,
-              fontSize: 18,
-              letterSpacing: 2,
-              color: colors.ink,
-              minWidth: 0,
-            }}
+            style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontFamily: font.display, fontWeight: 600, fontSize: 18, letterSpacing: 2, color: colors.ink, minWidth: 0 }}
           />
         </div>
         {error && <div style={{ color: colors.overdueText, fontSize: 12.5, marginTop: 8 }}>{error}</div>}
