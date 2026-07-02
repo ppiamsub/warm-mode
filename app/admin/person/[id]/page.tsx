@@ -10,7 +10,7 @@ import { EntryCard } from '@/components/EntryCard';
 import { PaymentSheet } from '@/components/PaymentSheet';
 import { AddEntrySheet } from '@/components/AddEntrySheet';
 import { InstallmentPlanSheet } from '@/components/InstallmentPlanSheet';
-import { IconBack, IconPlus } from '@/components/ui/Icons';
+import { IconBack, IconPlus, IconSearch } from '@/components/ui/Icons';
 import type { Entry, EntryView, Installment, Person } from '@/types';
 
 export default function PersonDetailPage() {
@@ -26,6 +26,7 @@ export default function PersonDetailPage() {
   const [editEntry, setEditEntry] = useState<EntryView | null>(null);
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [entryQuery, setEntryQuery] = useState('');
 
   const load = async () => {
     try {
@@ -126,6 +127,10 @@ export default function PersonDetailPage() {
   }, [id]);
 
   const views = useMemo(() => entries.map(toEntryView), [entries]);
+  const shownViews = useMemo(
+    () => views.filter((v) => v.description.includes(entryQuery.trim())),
+    [views, entryQuery]
+  );
   const total = entries.reduce((s, e) => s + Number(e.amount), 0);
   const paid = entries.reduce((s, e) => s + Number(e.paid_amount), 0);
   const remaining = Math.max(total - paid, 0);
@@ -167,6 +172,29 @@ export default function PersonDetailPage() {
     }
   };
 
+  // แก้ชื่อสมาชิก
+  const renameMember = async () => {
+    if (!person) return;
+    const name = window.prompt('แก้ไขชื่อสมาชิก', person.name);
+    if (!name?.trim()) return;
+    const res = await fetch(`/api/people/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    if (res.ok) await load();
+    else window.alert('แก้ไขไม่สำเร็จ');
+  };
+
+  // ลบสมาชิก (ลบรายการทั้งหมดของคนนี้ด้วย)
+  const deleteMember = async () => {
+    if (!person) return;
+    if (!window.confirm(`ลบสมาชิก "${person.name}" และรายการทั้งหมด?`)) return;
+    const res = await fetch(`/api/people/${id}`, { method: 'DELETE' });
+    if (res.ok) router.push('/admin');
+    else window.alert('ลบไม่สำเร็จ');
+  };
+
   if (loading) {
     return (
       <Phone>
@@ -205,12 +233,21 @@ export default function PersonDetailPage() {
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,.2)', border: '1px solid rgba(255,255,255,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font.display, fontWeight: 700, fontSize: 24 }}>
               {person.name.charAt(0)}
             </div>
-            <div>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 20 }}>{person.name}</div>
               <div style={{ display: 'inline-block', marginTop: 5, padding: '3px 10px', borderRadius: 999, background: 'rgba(255,255,255,.2)', fontSize: 12, fontFamily: font.display, letterSpacing: 1 }}>
                 รหัส {person.personal_code}
               </div>
             </div>
+          </div>
+          {/* จัดการสมาชิก */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+            <button onClick={renameMember} style={{ flex: 1, height: 38, borderRadius: 11, background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.25)', color: '#fff', fontSize: 13, fontWeight: 600 }}>
+              แก้ไขชื่อ
+            </button>
+            <button onClick={deleteMember} style={{ flex: 1, height: 38, borderRadius: 11, background: 'rgba(193,72,58,.9)', color: '#fff', fontSize: 13, fontWeight: 600 }}>
+              ลบสมาชิก
+            </button>
           </div>
         </div>
 
@@ -223,8 +260,21 @@ export default function PersonDetailPage() {
             <div style={{ fontSize: 12.5, color: colors.inkMuted }}>{views.length} รายการ</div>
           </div>
 
+          {/* ค้นหารายการ (แสดงเมื่อมีหลายรายการ) */}
+          {views.length > 3 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 14, padding: '11px 14px', marginBottom: 12 }}>
+              <IconSearch size={17} color="#9fb3a8" strokeWidth={2} />
+              <input
+                value={entryQuery}
+                onChange={(e) => setEntryQuery(e.target.value)}
+                placeholder="ค้นหารายการ..."
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: colors.ink, minWidth: 0 }}
+              />
+            </div>
+          )}
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {views.map((v) => (
+            {shownViews.map((v) => (
               <EntryCard
                 key={v.id}
                 entry={v}
@@ -239,6 +289,9 @@ export default function PersonDetailPage() {
             ))}
             {views.length === 0 && (
               <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0' }}>ยังไม่มีรายการ</div>
+            )}
+            {views.length > 0 && shownViews.length === 0 && (
+              <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '20px 0' }}>ไม่พบรายการที่ค้นหา</div>
             )}
           </div>
         </ScrollArea>

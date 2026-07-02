@@ -7,7 +7,7 @@ import { baht } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { PersonCard } from '@/components/PersonCard';
 import { BottomNav } from '@/components/ui/BottomNav';
-import { IconBell, IconSearch, IconPlus } from '@/components/ui/Icons';
+import { IconBell, IconSearch, IconPlus, IconGear } from '@/components/ui/Icons';
 import type { PersonSummary } from '@/types';
 
 // พาเลตต์สี avatar (วนตามลำดับ)
@@ -20,6 +20,7 @@ const AVATARS = [
 ];
 
 interface Overview {
+  bookId: string;
   bookName: string;
   headline: { totalRemaining: number; totalPaid: number; peopleCount: number };
   people: PersonSummary[];
@@ -31,6 +32,34 @@ export default function AdminDashboard() {
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [settings, setSettings] = useState(false);
+
+  // แก้ไขชื่อบัญชี
+  const renameBook = async () => {
+    if (!data) return;
+    const name = window.prompt('แก้ไขชื่อบัญชี', data.bookName);
+    if (!name?.trim()) return;
+    const res = await fetch(`/api/books/${data.bookId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name.trim() }),
+    });
+    if (res.ok) {
+      setSettings(false);
+      await load();
+    } else {
+      window.alert('แก้ไขไม่สำเร็จ');
+    }
+  };
+
+  // ลบบัญชี (ลบสมาชิก + รายการทั้งหมด)
+  const deleteBook = async () => {
+    if (!data) return;
+    if (!window.confirm(`ลบบัญชี "${data.bookName}" ทั้งหมด?\nรวมสมาชิกและรายการทุกอย่าง — กู้คืนไม่ได้`)) return;
+    const res = await fetch(`/api/books/${data.bookId}`, { method: 'DELETE' });
+    if (res.ok) router.replace('/accounts');
+    else window.alert('ลบไม่สำเร็จ');
+  };
 
   const load = async () => {
     try {
@@ -93,9 +122,9 @@ export default function AdminDashboard() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
               <div style={{ padding: '4px 11px', borderRadius: 999, background: 'rgba(255,255,255,.2)', fontSize: 12, fontWeight: 600 }}>Admin</div>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <IconBell size={19} color="#fff" />
-              </div>
+              <button onClick={() => setSettings(true)} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconGear size={19} color="#fff" />
+              </button>
             </div>
           </div>
 
@@ -169,6 +198,28 @@ export default function AdminDashboard() {
           </div>
           <BottomNav active="home" />
         </div>
+
+        {/* Bottom sheet จัดการบัญชี */}
+        {settings && (
+          <div onClick={() => setSettings(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(14,44,31,.55)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', zIndex: 50 }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ background: colors.surface, borderRadius: '28px 28px 0 0', padding: '10px 20px 30px', boxShadow: '0 -20px 50px rgba(0,0,0,.3)' }}>
+              <div style={{ width: 40, height: 5, borderRadius: 999, background: '#d7ddd8', margin: '2px auto 16px' }} />
+              <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 20, color: colors.ink }}>จัดการบัญชี</div>
+              <div style={{ fontSize: 13, color: colors.inkMuted, marginTop: 3 }}>{data?.bookName}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+                <button onClick={renameBook} style={{ width: '100%', height: 50, borderRadius: 14, background: colors.paidBg, color: colors.green, fontFamily: font.display, fontWeight: 600, fontSize: 15 }}>
+                  แก้ไขชื่อบัญชี
+                </button>
+                <button onClick={deleteBook} style={{ width: '100%', height: 50, borderRadius: 14, background: '#fbe9e6', color: colors.overdueText, fontFamily: font.display, fontWeight: 600, fontSize: 15 }}>
+                  ลบบัญชี
+                </button>
+                <button onClick={() => setSettings(false)} style={{ width: '100%', height: 50, borderRadius: 14, border: '1.5px solid #dbe3dd', color: '#5a6b62', fontFamily: font.display, fontWeight: 600, fontSize: 15, background: colors.surface }}>
+                  ปิด
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Phone>
   );

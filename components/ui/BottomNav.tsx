@@ -1,37 +1,41 @@
 'use client';
 // แถบเมนูล่างสำหรับหน้า Admin
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { colors } from '@/lib/theme';
 import { IconHome, IconPeople, IconChart, IconProfile } from '@/components/ui/Icons';
 
 type Tab = 'home' | 'people' | 'summary' | 'profile';
 
-const items: { key: Tab; label: string; Icon: typeof IconHome }[] = [
-  { key: 'home', label: 'หน้าหลัก', Icon: IconHome },
-  { key: 'people', label: 'สมาชิก', Icon: IconPeople },
-  { key: 'summary', label: 'สรุปยอด', Icon: IconChart },
-  { key: 'profile', label: 'โปรไฟล์', Icon: IconProfile },
+const items: { key: Tab; label: string; Icon: typeof IconHome; href: string }[] = [
+  { key: 'home', label: 'หน้าหลัก', Icon: IconHome, href: '/admin' },
+  { key: 'people', label: 'สมาชิก', Icon: IconPeople, href: '/admin' },
+  { key: 'summary', label: 'สรุปยอด', Icon: IconChart, href: '/admin/summary' },
+  { key: 'profile', label: 'บัญชี', Icon: IconProfile, href: '/accounts' },
 ];
 
 export function BottomNav({ active = 'home' }: { active?: Tab }) {
+  const router = useRouter();
   return (
     <div style={{ display: 'flex', justifyContent: 'space-around', padding: '2px 20px 26px' }}>
-      {items.map(({ key, label, Icon }) => {
+      {items.map(({ key, label, Icon, href }) => {
         const on = key === active;
         return (
-          <div
+          <button
             key={key}
+            onClick={() => router.push(href)}
             style={{
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               gap: 4,
               color: on ? colors.green : colors.inkFaint,
+              background: 'none',
             }}
           >
             <Icon size={22} />
             <span style={{ fontSize: 10.5, fontWeight: on ? 600 : 500 }}>{label}</span>
-          </div>
+          </button>
         );
       })}
     </div>

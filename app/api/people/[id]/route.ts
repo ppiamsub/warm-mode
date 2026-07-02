@@ -1,9 +1,39 @@
-// /api/people/:id — GET รายละเอียด (person + entries) · DELETE ลบคน (Cascade)  [Admin]
+// /api/people/:id — GET รายละเอียด · PATCH แก้ชื่อ · DELETE ลบคน (Cascade)  [Admin]
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
 
 export const dynamic = 'force-dynamic';
+
+export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+  let session;
+  try {
+    session = requireAdmin();
+  } catch (res) {
+    return res as NextResponse;
+  }
+
+  let name: string | undefined;
+  try {
+    ({ name } = await req.json());
+  } catch {
+    return NextResponse.json({ error: 'invalid body' }, { status: 400 });
+  }
+  if (!name || !name.trim()) {
+    return NextResponse.json({ error: 'ต้องระบุชื่อ' }, { status: 400 });
+  }
+
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('people')
+    .update({ name: name.trim() })
+    .eq('id', params.id)
+    .eq('book_id', session.bookId) // เฉพาะคนในบัญชีตัวเอง
+    .select('id, name, personal_code')
+    .single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json(data);
+}
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   let session;

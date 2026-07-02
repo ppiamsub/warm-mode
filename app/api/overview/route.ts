@@ -53,6 +53,7 @@ export async function GET() {
   const totalPaid = entries.reduce((s, e) => s + Number(e.paid_amount), 0);
 
   return NextResponse.json({
+    bookId: session.bookId,
     bookName: book?.name ?? 'บัญชีของฉัน',
     headline: { totalRemaining, totalPaid, peopleCount: peopleList.length },
     people: summaries,

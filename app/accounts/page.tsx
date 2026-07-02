@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
-import { IconPlus } from '@/components/ui/Icons';
+import { IconPlus, IconSearch } from '@/components/ui/Icons';
 import { useLiff } from '@/components/LiffProvider';
 import type { Account } from '@/types';
 
@@ -16,6 +16,9 @@ export default function AccountHubPage() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [userName, setUserName] = useState('ผู้ใช้');
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+
+  const filtered = accounts.filter((a) => a.bookName.includes(query.trim()));
 
   // ชื่อ + รูปจาก LINE (fallback เป็นชื่อจาก DB / ตัวอักษรแรก)
   const displayName = profile?.displayName ?? userName;
@@ -134,6 +137,19 @@ export default function AccountHubPage() {
                 </div>
               )}
 
+              {/* ค้นหาชื่อบัญชี (แสดงเมื่อมีหลายบัญชี) */}
+              {accounts.length > 3 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 14, padding: '11px 14px', marginBottom: 12 }}>
+                  <IconSearch size={17} color="#9fb3a8" strokeWidth={2} />
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="ค้นหาชื่อบัญชี..."
+                    style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 14, color: colors.ink, minWidth: 0 }}
+                  />
+                </div>
+              )}
+
               {/* empty state */}
               {accounts.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '28px 16px 24px', background: colors.surface, border: `1px dashed ${colors.border}`, borderRadius: 20 }}>
@@ -147,7 +163,10 @@ export default function AccountHubPage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {accounts.map((acc) => {
+                  {filtered.length === 0 && (
+                    <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '16px 0' }}>ไม่พบบัญชีที่ค้นหา</div>
+                  )}
+                  {filtered.map((acc) => {
                     const isAdmin = acc.role === 'admin';
                     return (
                       <button
