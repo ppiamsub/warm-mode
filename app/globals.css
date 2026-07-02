@@ -1,0 +1,70 @@
+@import url('https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #e6ebe6;
+  font-family: 'IBM Plex Sans Thai', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #14231c;
+}
+
+/* กรอบมือถือกลางจอเมื่อเปิดบน desktop (LIFF จะเต็มจอบนมือถือจริง) */
+.phone-shell {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: radial-gradient(1200px 600px at 20% -10%, #eef4ef 0%, #e6ebe6 60%);
+}
+
+.phone {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  background: #eef4ef;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 60px rgba(16, 40, 28, 0.08);
+}
+
+@media (min-width: 460px) {
+  .phone {
+    margin: 24px 0;
+    min-height: auto;
+    height: calc(100dvh - 48px);
+    border-radius: 40px;
+    border: 1px solid rgba(16, 40, 28, 0.06);
+  }
+}
+
+/* ซ่อน scrollbar ให้ดูเหมือน native app */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

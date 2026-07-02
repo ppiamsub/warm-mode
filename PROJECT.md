@@ -6,18 +6,29 @@
 
 ## 1. ภาพรวมระบบและ Business Logic (System Overview & Rules)
 
-### 1.1 บทบาทผู้ใช้ (User Roles)
-| บทบาท (Role) | การเข้าสู่ระบบครั้งแรก | การเข้าสู่ระบบครั้งถัดไป | สิทธิ์การใช้งาน (Permissions) |
-| :--- | :--- | :--- | :--- |
-| **Admin** (เจ้าหนี้) | กรอก **โค้ดบัญชีหลัก (Book Code)** | **Auto-login ด้วย LINE UID** | จัดการข้อมูลทั้งหมด: เพิ่ม/ลบคน, เพิ่ม/ลบรายการหนี้, อัปเดตสถานะการจ่ายเงิน และดูสรุปยอดของทุกคน |
-| **Viewer** (ลูกหนี้) | กรอก **โค้ดส่วนตัว (Personal Code)** | **Auto-login ด้วย LINE UID** | ดูยอดหนี้และประวัติการจ่ายเงินของตัวเองเท่านั้น ไม่สามารถแก้ไขข้อมูลใดๆ ได้ |
+### 1.1 Flow การเข้าใช้งาน (Login & Account Selection)
 
-### 1.2 กติกาหลักของระบบ (Core Rules)
-- **Data Hierarchy:** 1 บัญชีหลัก (Book) สามารถมีลูกหนี้ได้หลายคน (People) และลูกหนี้แต่ละคนมีรายการหนี้ได้หลายรายการ (Entries)
-- **LINE Integration (Seamless Login):** 
-  - เมื่อเปิดแอปผ่าน LINE (LIFF) ระบบจะดึง `line_uid` มาตรวจสอบ
-  - ถ้าระบบจำได้ว่า `line_uid` นี้ผูกกับ Admin หรือ Viewer คนไหน จะข้ามหน้ากรอกโค้ดและพาเข้า Dashboard ทันที
-  - หากเป็นผู้ใช้ใหม่ ระบบจะให้กรอก Code (Admin/Viewer) เมื่อกรอกสำเร็จ ระบบจะผูก `line_uid` กับข้อมูลนั้นให้โดยอัตโนมัติ
+**ทุกครั้งต้อง Login ด้วย LINE ก่อนเสมอ** — ระบบใช้ `line_uid` เป็นตัวตนหลัก (1 LINE user = 1 record ในตาราง `users`) ผู้ใช้ 1 คนสามารถเป็นสมาชิกได้**หลายบัญชี**พร้อมกัน
+
+1. **Login LINE** → ระบบ upsert `users` จาก `line_uid`
+2. **หน้าเลือกบัญชี (Account Hub)** → แสดงรายการบัญชีที่ผู้ใช้เป็นสมาชิก (จากตาราง `memberships`) พร้อม 2 ทางเลือก:
+   - ➕ **สร้างบัญชีของตัวเอง** → ได้ `admin_code` ใหม่ + เป็น **Admin** ของบัญชีนั้น
+   - 🔑 **เข้าร่วมบัญชีคนอื่นด้วยโค้ด** → บทบาทขึ้นกับชนิดโค้ด (ดูตารางล่าง)
+3. **เลือกบัญชี** → เข้าสู่ Dashboard ตามบทบาทในบัญชีนั้น
+
+### 1.2 บทบาทผู้ใช้ในแต่ละบัญชี (Roles per Membership)
+| บทบาท (Role) | ได้มาโดย | สิทธิ์การใช้งาน (Permissions) |
+| :--- | :--- | :--- |
+| **Admin** (เจ้าหนี้) | สร้างบัญชีใหม่ **หรือ** กรอก **โค้ดบัญชีหลัก (Book Code)** เพื่อเข้าร่วมเป็นผู้ดูแลร่วม | จัดการข้อมูลทั้งหมด: เพิ่ม/ลบคน, เพิ่ม/ลบรายการหนี้, อัปเดตสถานะการจ่ายเงิน และดูสรุปยอดของทุกคน |
+| **Viewer** (ลูกหนี้) | กรอก **โค้ดส่วนตัว (Personal Code)** เพื่อผูกตัวเองกับรายชื่อในบัญชี | ดูยอดหนี้และประวัติการจ่ายเงินของตัวเองเท่านั้น ไม่สามารถแก้ไขข้อมูลใดๆ ได้ |
+
+### 1.3 กติกาหลักของระบบ (Core Rules)
+- **Multi-Account Membership:** 1 LINE user (`users`) เป็นสมาชิกได้หลายบัญชี ผ่านตาราง `memberships` (user × book × role) — เป็น Admin ของบัญชีตัวเอง และเป็น Viewer/Admin ในบัญชีคนอื่นได้พร้อมกัน
+- **Data Hierarchy:** 1 บัญชีหลัก (Book) มีลูกหนี้ได้หลายคน (People) และลูกหนี้แต่ละคนมีรายการหนี้ได้หลายรายการ (Entries)
+- **LINE Integration (Login):**
+  - ต้อง Login ผ่าน LINE (LIFF) เสมอ ระบบดึง `line_uid` มา upsert ตาราง `users`
+  - หลัง login พาเข้า **หน้าเลือกบัญชี (Account Hub)** เสมอ — ไม่ข้ามไป Dashboard อัตโนมัติ (เพราะมีได้หลายบัญชี)
+  - การเข้าร่วมบัญชีใหม่ทำได้จาก hub: สร้างบัญชีเอง หรือกรอกโค้ด (Book Code = Admin, Personal Code = Viewer)
 - **Payment Tracking:** รองรับการจ่ายบางส่วน (Partial Payment) โดยเก็บ "ยอดเต็ม (Amount)" และ "ยอดที่จ่ายแล้ว (Paid Amount)"
 - **On-the-fly Calculation:** ยอดค้างชำระ (Remaining) คำนวณสดจาก `Amount - Paid Amount` ฝั่ง Application/Query
 - **Cascade Deletion:** ลบรายชื่อบุคคล (Person) ออกจากบัญชี ➔ รายการหนี้ (Entries) ของคนนั้นจะถูกลบทิ้งทั้งหมด
@@ -26,28 +37,47 @@
 
 ## 2. โครงสร้างฐานข้อมูล (Data Model)
 
-เพิ่มฟิลด์ `line_uid` ในตาราง `books` (สำหรับ Admin) และ `people` (สำหรับ Viewer) เพื่อใช้จำค่าการ Login ของ LINE
+แยกตัวตนผู้ใช้ (`users`) ออกจากบัญชี แล้วเชื่อมด้วยตาราง `memberships` เพื่อรองรับ 1 user หลายบัญชี · `line_uid` ย้ายมาอยู่ที่ `users` (unique ที่เดียว)
 
 ```sql
--- 1. ตารางสมุดบัญชีหลัก (สำหรับ Admin)
-CREATE TABLE books (
+-- 1. ตารางผู้ใช้ (1 LINE user = 1 record) — ตัวตนหลักของระบบ
+CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_code TEXT UNIQUE NOT NULL,
-  line_uid TEXT UNIQUE, -- เก็บ LINE UID ของ Admin
+  line_uid TEXT UNIQUE NOT NULL, -- LINE UID (หัวใจของ Auto-login)
+  display_name TEXT,
   created_at TIMESTAMP DEFAULT now()
 );
 
--- 2. ตารางรายชื่อลูกหนี้ (สำหรับ Viewer)
+-- 2. ตารางสมุดบัญชีหลัก
+CREATE TABLE books (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL DEFAULT 'บัญชีของฉัน',
+  admin_code TEXT UNIQUE NOT NULL, -- Book Code: กรอกเพื่อเข้าร่วมเป็น Admin
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- 3. ตารางรายชื่อลูกหนี้ในบัญชี
 CREATE TABLE people (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   book_id UUID REFERENCES books(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  personal_code TEXT UNIQUE NOT NULL,
-  line_uid TEXT UNIQUE, -- เก็บ LINE UID ของลูกหนี้
+  personal_code TEXT UNIQUE NOT NULL, -- Personal Code: กรอกเพื่อเข้าร่วมเป็น Viewer
+  user_id UUID REFERENCES users(id) ON DELETE SET NULL, -- LINE user ที่ผูกกับคนนี้
   created_at TIMESTAMP DEFAULT now()
 );
 
--- 3. ตารางรายการหนี้สิน
+-- 4. ตารางความเป็นสมาชิก (หัวใจของ multi-account) — แหล่งข้อมูลของหน้า Hub
+CREATE TABLE memberships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  book_id UUID REFERENCES books(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('admin','viewer')),
+  person_id UUID REFERENCES people(id) ON DELETE CASCADE, -- set เมื่อ role='viewer'
+  created_at TIMESTAMP DEFAULT now(),
+  UNIQUE (user_id, book_id) -- 1 user มีได้ 1 บทบาทต่อบัญชี
+);
+
+-- 5. ตารางรายการหนี้สิน
 CREATE TABLE entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   person_id UUID REFERENCES people(id) ON DELETE CASCADE,
@@ -78,13 +108,16 @@ CREATE TABLE entries (
 ```text
 debt-ledger/
 ├── app/
-│   ├── page.tsx                   # หน้าแรก (ตรวจสอบ LINE UID / ฟอร์มกรอก Code)
+│   ├── page.tsx                   # หน้าแรก (Login ด้วย LINE เสมอ)
+│   ├── accounts/page.tsx          # หน้าเลือกบัญชี (Hub) + สร้าง/เข้าร่วมด้วยโค้ด
 │   ├── admin/page.tsx             # Dashboard สำหรับ Admin
 │   ├── viewer/page.tsx            # หน้าแสดงยอดหนี้ส่วนตัวสำหรับ Viewer
 │   └── api/
-│       ├── auth/
-│       │   ├── line/route.ts      # API ตรวจสอบ LINE UID ➔ คืน Session หากเคยผูกแล้ว
-│       │   └── code/route.ts      # API ตรวจสอบ Code ➔ ผูก LINE UID ➔ คืน Session
+│       ├── auth/line/route.ts     # upsert users จาก line_uid ➔ คืน Session + memberships
+│       ├── accounts/route.ts      # ดึงรายการบัญชีของผู้ใช้ (Hub)
+│       ├── accounts/select/route.ts # เลือกบัญชี ➔ set context ลง Session
+│       ├── books/route.ts         # สร้างบัญชีใหม่ + membership Admin
+│       ├── join/route.ts          # เข้าร่วมด้วยโค้ด (Book/Personal Code)
 │       ├── people/route.ts        # API สำหรับ CRUD คน
 │       └── entries/route.ts       # API สำหรับ CRUD รายการหนี้
 ├── components/
@@ -109,9 +142,11 @@ debt-ledger/
 
 | Method | Path | หน้าที่การทำงาน |
 | :--- | :--- | :--- |
-| `POST` | `/api/books` | สร้างสมุดบัญชีใหม่ พร้อม Gen `admin_code` |
-| `POST` | `/api/auth/line` | รับ `line_uid` ➔ ตรวจสอบใน DB ➔ หากพบ คืน Session พร้อม Role (Auto-login) |
-| `POST` | `/api/auth/code` | รับ Code + `line_uid` ➔ ตรวจสอบ ➔ หากถูกต้องให้ผูก `line_uid` เข้ากับบัญชี ➔ คืน Session |
+| `POST` | `/api/auth/line` | รับ `line_uid` ➔ upsert `users` ➔ คืน Session ฐาน + รายการบัญชี (memberships) |
+| `GET` | `/api/accounts` | ดึงรายการบัญชีของผู้ใช้ปัจจุบัน (สำหรับหน้า Hub) |
+| `POST` | `/api/accounts/select` | เลือกบัญชี (set `bookId`+`role` ลง Session) ➔ เข้า Dashboard |
+| `POST` | `/api/books` | สร้างบัญชีใหม่ พร้อม Gen `admin_code` + สร้าง membership เป็น Admin |
+| `POST` | `/api/join` | กรอกโค้ดเข้าร่วม ➔ Book Code=Admin / Personal Code=Viewer ➔ สร้าง membership |
 | `POST` | `/api/people` | เพิ่มคนลงในบัญชี พร้อม Gen `personal_code` |
 | `DELETE` | `/api/people/:id` | ลบรายชื่อคน (Cascade ลบ entries ด้วย) |
 | `POST` | `/api/entries` | เพิ่มรายการหนี้ใหม่ |
@@ -131,12 +166,13 @@ debt-ledger/
 
 ## 7. ขั้นตอนการพัฒนา (Roadmap)
 
-1. [x] รวบรวม Requirement และอัปเดต Business Logic (เพิ่ม LINE Login)
-2. [ ] สร้าง LINE Login Channel ใน LINE Developers Console และดึง LIFF ID
-3. [ ] ตั้งค่า Supabase Project และ Run Schema ใหม่
-4. [ ] ติดตั้ง Next.js และ LINE LIFF SDK (`@line/liff`)
-5. [ ] พัฒนา API `/api/auth/line` และ `/api/auth/code` เพื่อจัดการ Flow การล็อกอิน
-6. [ ] พัฒนาหน้า Frontend: LiffProvider ➔ เช็คสถานะ ➔ หน้า Login/Dashboard
-7. [ ] เปิดใช้งานและคอนฟิก RLS Policy บน Supabase
-8. [ ] ทดสอบ Edge Cases (ล็อกอินด้วยมือถือเครื่องอื่น, ถอนสิทธิ์แอป LINE)
-9. [ ] Deploy ขึ้น Vercel
+1. [x] รวบรวม Requirement และอัปเดต Business Logic (เพิ่ม LINE Login + Multi-Account Hub)
+2. [x] ติดตั้ง Next.js + LINE LIFF SDK (`@line/liff`) + `@supabase/ssr`
+3. [x] ตั้งค่า Supabase Project และ Run Schema (`users`, `books`, `people`, `memberships`, `entries`) + Seed
+4. [x] พัฒนา API Auth Flow: `/api/auth/line` (upsert user), `/api/join`, `/api/accounts`, `/api/accounts/select`, `/api/books`
+5. [x] พัฒนาหน้า Frontend: LiffProvider ➔ Login (LINE) ➔ Hub เลือกบัญชี ➔ Dashboard (Admin/Viewer)
+6. [x] ต่อ Dashboard กับข้อมูลจริง: `/api/overview`, `/api/people/:id`, `/api/me` + ปุ่มบันทึกจ่าย/เพิ่มรายการ/เพิ่มสมาชิก (PATCH/POST จริง)
+7. [x] เปิด RLS บนทุกตาราง (API ใช้ service_role + บังคับสิทธิ์ผ่าน session cookie) · ทดสอบ end-to-end ผ่าน (create/join/pay/add)
+8. [ ] สร้าง LINE Login Channel + LIFF ID จริง (ตอนนี้ใช้ dev-login แทนในโหมด mock)
+9. [ ] ทดสอบ Edge Cases (ล็อกอินเครื่องอื่น, ถอนสิทธิ์แอป LINE, RLS policy ละเอียด)
+10. [ ] Deploy ขึ้น Vercel
