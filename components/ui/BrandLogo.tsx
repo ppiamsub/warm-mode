@@ -47,20 +47,23 @@ export function BrandLogo({
       style={{
         position: 'relative',
         width: size,
-        borderRadius: 30,
+        height: size, // เพิ่ม height
+        borderRadius: '50%',
         padding: 12,
-        background: 'linear-gradient(160deg,#123125 0%,#0a2318 55%,#06160f 100%)',
+        background:
+          'transparent linear-gradient(180deg, rgba(29, 160, 101, 0.8) 0%, rgba(17, 97, 60, 0.6) 100%) 0% 0% no-repeat padding-box',
         boxShadow:
-          '0 22px 46px rgba(6,28,18,.38), inset 0 0 0 1px rgba(102,230,166,.20), 0 0 36px rgba(40,183,121,.20)',
+          '0 22px 46px rgba(6,28,18,.38), inset 0 0 0 1px rgba(85, 206, 166, 0.2), 0 0 36px rgba(68, 228, 159, 0.2)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        boxSizing: 'border-box',
       }}
     >
       {/* ประกายนีออนด้านบน */}
       <div
         aria-hidden
-        style={{ position: 'absolute', inset: 0, borderRadius: 30, background: 'linear-gradient(180deg, rgba(102,230,166,.10) 0%, rgba(102,230,166,0) 38%)', pointerEvents: 'none' }}
+        style={{ position: 'absolute', inset: 0, borderRadius: 30, background: 'linear-gradient(180deg, rgba(131, 219, 175, 0.1) 0%, rgba(102,230,166,0) 38%)', pointerEvents: 'none' }}
       />
       <Image
         src={logo}

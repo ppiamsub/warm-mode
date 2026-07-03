@@ -52,7 +52,7 @@ export default function LoginPage() {
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
             <BrandLogo size={244} priority />
             <div style={{ textAlign: 'center', marginTop: 2 }}>
-              <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, letterSpacing: '.5px', color: colors.ink }}>Warm Mode</div>
+              <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, letterSpacing: '.5px', color: colors.ink }}>WARM MODE</div>
               <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 15.5, color: colors.green, marginTop: 3 }}>สมุดเก็บเงิน</div>
             </div>
             <div style={{ fontSize: 14, color: colors.inkSoft, textAlign: 'center', lineHeight: 1.5, maxWidth: 250 }}>
