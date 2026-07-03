@@ -2,12 +2,12 @@
 // ใช้ร่วมกันทุก component เพื่อความสม่ำเสมอของ UI
 
 export const colors = {
-  // Brand green (emerald — หรูหรา ทันสมัย)
-  green: '#178a55',
-  greenBright: '#28b479',
-  greenDeep: '#0e7a4a',
-  greenDeepest: '#095f39',
-  greenDark: '#0a2b1e',
+  // Brand green — โทน "เขียวหญ้า" ให้ตรงกับโลโก้ (sampled: accent #31b52e, lime bg #88b73c)
+  green: '#1e8a2f',
+  greenBright: '#33b52e',
+  greenDeep: '#15792a',
+  greenDeepest: '#0b5c1e',
+  greenDark: '#0d2b13',
 
   // Backgrounds (ขาวอมเขียวนวล ๆ)
   bg: '#eef5f0',
