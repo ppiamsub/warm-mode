@@ -4,11 +4,31 @@ import Image from 'next/image';
 import logo from '@/src/logo.png';
 import { font } from '@/lib/theme';
 
-/** แถบแบรนด์ "WARM MODE" + จุดนีออน — ใช้บนหัว (header สีเขียว) ทุกหน้าให้ดูเป็นทางเดียวกัน */
+/** แถบแบรนด์ โลโก้เล็ก + "WARM MODE" — ใช้บนหัว (header สีเขียว) ทุกหน้า เพื่อให้แคปหน้าจอมีโลโก้ติดเสมอ */
 export function BrandMark({ style }: { style?: React.CSSProperties }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, ...style }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#66e6a6', boxShadow: '0 0 9px #66e6a6, 0 0 2px #fff', flex: 'none' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 9, ...style }}>
+      <span
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 9,
+          overflow: 'hidden',
+          flex: 'none',
+          background: '#0a2318',
+          border: '1px solid rgba(255,255,255,.30)',
+          boxShadow: '0 0 10px rgba(40,183,121,.40)',
+          display: 'block',
+        }}
+      >
+        <Image
+          src={logo}
+          alt="Warm Mode"
+          width={30}
+          height={30}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '64% 29%', display: 'block' }}
+        />
+      </span>
       <span style={{ fontFamily: font.display, fontWeight: 700, fontSize: 13, letterSpacing: 2.5, color: '#fff', opacity: 0.95 }}>WARM MODE</span>
     </div>
   );
