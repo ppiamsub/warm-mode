@@ -15,41 +15,39 @@ export function BrandMark({ style }: { style?: React.CSSProperties }) {
 }
 
 export function BrandLogo({
-  size = 220,
-  glow = true,
+  size = 240,
   priority = false,
 }: {
   size?: number;
-  glow?: boolean;
   priority?: boolean;
 }) {
+  // มาสคอตอยู่บนพื้นเข้ม — จัดใส่ "การ์ดมืดนีออน" ให้ดูตั้งใจ + เข้ากับธีมไซเบอร์
   return (
-    <div style={{ position: 'relative', width: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      {glow && (
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: '-10% -8%',
-            background:
-              'radial-gradient(58% 58% at 50% 46%, rgba(40,183,121,.32) 0%, rgba(40,183,121,.12) 46%, rgba(40,183,121,0) 72%)',
-            filter: 'blur(8px)',
-            zIndex: 0,
-          }}
-        />
-      )}
+    <div
+      style={{
+        position: 'relative',
+        width: size,
+        borderRadius: 30,
+        padding: 12,
+        background: 'linear-gradient(160deg,#123125 0%,#0a2318 55%,#06160f 100%)',
+        boxShadow:
+          '0 22px 46px rgba(6,28,18,.38), inset 0 0 0 1px rgba(102,230,166,.20), 0 0 36px rgba(40,183,121,.20)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {/* ประกายนีออนด้านบน */}
+      <div
+        aria-hidden
+        style={{ position: 'absolute', inset: 0, borderRadius: 30, background: 'linear-gradient(180deg, rgba(102,230,166,.10) 0%, rgba(102,230,166,0) 38%)', pointerEvents: 'none' }}
+      />
       <Image
         src={logo}
         alt="Warm Mode"
         priority={priority}
         sizes={`${size}px`}
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          width: '100%',
-          height: 'auto',
-          filter: 'drop-shadow(0 14px 26px rgba(12,44,28,.30))',
-        }}
+        style={{ position: 'relative', zIndex: 1, width: '100%', height: 'auto', display: 'block', borderRadius: 20 }}
       />
     </div>
   );
