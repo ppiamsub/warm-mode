@@ -3,8 +3,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
-import { baht } from '@/lib/calc';
+import { baht, currentMonthKeyTH, round2 } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
+import { BrandMark } from '@/components/ui/BrandLogo';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { IconBack, IconChevron } from '@/components/ui/Icons';
 import { thaiFull } from '@/lib/calc';
@@ -131,6 +132,12 @@ export default function SummaryPage() {
     return Array.from(map.values()).sort((a, b) => (a.key < b.key ? 1 : -1));
   }, [dueItems, mode]);
 
+  // แสดงแค่สูงสุดถึงงวดปัจจุบัน (ไม่โชว์เดือน/ปีอนาคต) อิงเวลาไทย
+  const visibleBuckets = useMemo(() => {
+    const cutoff = mode === 'month' ? currentMonthKeyTH() : currentMonthKeyTH().slice(0, 4);
+    return buckets.filter((b) => b.key <= cutoff);
+  }, [buckets, mode]);
+
   const grand = useMemo(
     () =>
       dueItems.reduce(
@@ -144,11 +151,61 @@ export default function SummaryPage() {
     setExporting(true);
     try {
       const XLSX = await import('xlsx');
-      // export ตามกำหนดชำระ (งวดผ่อน) พร้อม stamp วันจ่ายจริง
-      const data = dueItems
+      const wb = XLSX.utils.book_new();
+
+      // ตัดถึงเดือนปัจจุบัน (อิงเวลาไทย) — ไม่รวมงวด/รายการที่ยังไม่ถึงกำหนดในอนาคต
+      const cutoff = currentMonthKeyTH();
+      const mk = (d: string) => String(d).slice(0, 7);
+
+      // ── ชีต 1: สรุปรายการ (ต่อรายการ) พร้อมข้อมูลการผ่อน — เฉพาะรายการที่เริ่มแล้ว ──
+      const startedRows = rows.filter((r) => {
+        const inst = r.installments ?? [];
+        return inst.length ? inst.some((i) => mk(i.due_date) <= cutoff) : mk(r.entry_date) <= cutoff;
+      });
+      const summaryRows = startedRows
         .slice()
-        .sort((a, b) => (a.due_date < b.due_date ? -1 : 1))
-        .map((it) => ({
+        .sort((a, b) => (a.entry_date < b.entry_date ? -1 : 1))
+        .map((r) => {
+          const inst = r.installments ?? [];
+          const hasPlan = inst.length > 0;
+          const paidMonths = inst.filter((i) => i.paid).length;
+          // ยอดผ่อนต่องวด (โดยประมาณ = ยอดทั้งหมด ÷ จำนวนงวด)
+          const perMonth = hasPlan ? round2(Number(r.amount) / inst.length) : '';
+          return {
+            วันที่ตั้ง: r.entry_date,
+            สมาชิก: r.person_name,
+            รายการ: r.description,
+            แบบชำระ: hasPlan ? 'ผ่อน' : 'จ่ายเต็ม',
+            ยอดทั้งหมด: Number(r.amount),
+            ยอดผ่อนต่องวด: perMonth,
+            งวดที่จ่ายแล้ว: hasPlan ? paidMonths : '',
+            งวดทั้งหมด: hasPlan ? inst.length : '',
+            'ผ่อน (งวด)': hasPlan ? `${paidMonths}/${inst.length}` : '-',
+            จ่ายแล้ว: Number(r.paid_amount),
+            คงเหลือ: Number(r.remaining),
+          };
+        });
+      const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
+      wsSummary['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 12 }, { wch: 13 }, { wch: 13 }, { wch: 11 }, { wch: 11 }, { wch: 12 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsSummary, 'สรุปรายการ');
+
+      // ── ชีตแยกตามเดือน (ต่องวด, ตัดถึงเดือนปัจจุบัน) ──
+      const byMonth = new Map<string, DueItem[]>();
+      for (const it of dueItems) {
+        const key = mk(it.due_date);
+        if (key > cutoff) continue; // ไม่รวมเดือนอนาคต
+        const arr = byMonth.get(key) ?? [];
+        arr.push(it);
+        byMonth.set(key, arr);
+      }
+      const monthLabel = (key: string) => {
+        const [y, m] = key.split('-').map(Number);
+        return `${TH_MONTHS[m - 1]} ${y + 543}`;
+      };
+      const usedNames = new Set<string>();
+      for (const key of Array.from(byMonth.keys()).sort()) {
+        const items = byMonth.get(key)!.slice().sort((a, b) => (a.due_date < b.due_date ? -1 : 1));
+        const monthRows: Record<string, string | number>[] = items.map((it) => ({
           กำหนดชำระ: it.due_date,
           สมาชิก: it.person_name,
           รายการ: it.description,
@@ -156,12 +213,22 @@ export default function SummaryPage() {
           ต้องจ่าย: it.amount,
           สถานะ: it.paid ? 'จ่ายแล้ว' : 'ค้างจ่าย',
           จ่ายจริงเมื่อ: it.paid_at ?? '',
-          ค้างจ่าย: it.amount - it.collected,
+          ค้างจ่าย: round2(it.amount - it.collected),
         }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      ws['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 8 }, { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 }];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'กำหนดชำระ');
+        // แถวรวมท้ายชีต
+        const due = round2(items.reduce((s, it) => s + it.amount, 0));
+        const collected = round2(items.reduce((s, it) => s + it.collected, 0));
+        monthRows.push({ กำหนดชำระ: 'รวม', สมาชิก: '', รายการ: '', งวดที่: '', ต้องจ่าย: due, สถานะ: `เก็บแล้ว ${collected}`, จ่ายจริงเมื่อ: '', ค้างจ่าย: round2(due - collected) });
+
+        const wsM = XLSX.utils.json_to_sheet(monthRows);
+        wsM['!cols'] = [{ wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 8 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 12 }];
+        // ชื่อชีต: <=31 ตัว, ไม่ซ้ำ, ตัดอักขระต้องห้าม [ ] : * ? / \
+        let name = monthLabel(key).replace(/[[\]:*?/\\]/g, '').slice(0, 31);
+        while (usedNames.has(name)) name = (name + '_').slice(0, 31);
+        usedNames.add(name);
+        XLSX.utils.book_append_sheet(wb, wsM, name);
+      }
+
       XLSX.writeFile(wb, `debt-ledger-${new Date().toISOString().slice(0, 10)}.xlsx`);
     } finally {
       setExporting(false);
@@ -172,6 +239,7 @@ export default function SummaryPage() {
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 24px', color: '#fff' }}>
+          <BrandMark style={{ marginBottom: 16 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button onClick={() => router.push('/admin')} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <IconBack size={18} color="#fff" />
@@ -212,11 +280,11 @@ export default function SummaryPage() {
 
           {loading ? (
             <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '30px 0' }}>กำลังโหลด...</div>
-          ) : buckets.length === 0 ? (
+          ) : visibleBuckets.length === 0 ? (
             <div style={{ textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '30px 0' }}>ยังไม่มีข้อมูล</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {buckets.map((b) => {
+              {visibleBuckets.map((b) => {
                 const paidCount = b.items.filter((i) => i.paid).length;
                 return (
                   <button

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { baht, toEntryView, thaiFull } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
+import { BrandMark } from '@/components/ui/BrandLogo';
 import { EntryCard } from '@/components/EntryCard';
 import { IconInfo, IconCheck, IconChat } from '@/components/ui/Icons';
 import type { Entry, Installment, Person } from '@/types';
@@ -66,6 +67,7 @@ export default function ViewerPage() {
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         {/* Header */}
         <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 24px', color: '#fff' }}>
+          <BrandMark style={{ marginBottom: 16 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 12, opacity: 0.82 }}>สวัสดี</div>

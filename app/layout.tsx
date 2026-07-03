@@ -3,7 +3,7 @@ import './globals.css';
 import { LiffProvider } from '@/components/LiffProvider';
 
 export const metadata: Metadata = {
-  title: 'สมุดเก็บเงิน — Debt Ledger',
+  title: 'Warm Mode — สมุดเก็บเงิน',
   description: 'ติดตามยอดเก็บเงินจากสมาชิก ง่ายๆ ครบ จบ ในที่เดียว',
 };
 

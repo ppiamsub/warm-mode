@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { toEntryView, round2, dueThisMonth as calcDueThisMonth } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
+import { BrandMark } from '@/components/ui/BrandLogo';
 import { SummaryCard } from '@/components/SummaryCard';
 import { EntryCard } from '@/components/EntryCard';
 import { PaymentSheet } from '@/components/PaymentSheet';
@@ -225,6 +226,7 @@ export default function PersonDetailPage() {
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         {/* Header */}
         <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 52px', color: '#fff' }}>
+          <BrandMark style={{ marginBottom: 16 }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
               onClick={() => router.push('/admin')}

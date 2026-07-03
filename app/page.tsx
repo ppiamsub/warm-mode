@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { Phone } from '@/components/ui/Primitives';
+import { BrandLogo } from '@/components/ui/BrandLogo';
 import { useLiff } from '@/components/LiffProvider';
 
 export default function LoginPage() {
@@ -47,27 +48,13 @@ export default function LoginPage() {
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '54px 24px 30px' }}>
-          {/* โลโก้ + สโลแกน */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 15 }}>
-            <div
-              style={{
-                width: 84,
-                height: 84,
-                borderRadius: 26,
-                background: gradients.logo,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                fontFamily: font.display,
-                fontWeight: 700,
-                fontSize: 44,
-                boxShadow: '0 18px 38px rgba(15,99,64,.34)',
-              }}
-            >
-              ฿
+          {/* โลโก้มาสคอต + สโลแกน */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+            <BrandLogo size={244} priority />
+            <div style={{ textAlign: 'center', marginTop: 2 }}>
+              <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, letterSpacing: '.5px', color: colors.ink }}>Warm Mode</div>
+              <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 15.5, color: colors.green, marginTop: 3 }}>สมุดเก็บเงิน</div>
             </div>
-            <div style={{ fontFamily: font.display, fontWeight: 700, fontSize: 28, color: colors.ink, marginTop: 6 }}>สมุดเก็บเงิน</div>
             <div style={{ fontSize: 14, color: colors.inkSoft, textAlign: 'center', lineHeight: 1.5, maxWidth: 250 }}>
               ติดตามยอดเก็บเงินจากสมาชิก
               <br />
