@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font } from '@/lib/theme';
-import { baht, toEntryView, thaiFull, dueThisMonth } from '@/lib/calc';
+import { baht, toEntryView, thaiFull, dueUpToThisMonth } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { GreenHeader } from '@/components/ui/GreenHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
@@ -53,7 +53,7 @@ export default function ViewerPage() {
   const history = views.filter((v) => v.paid_amount > 0);
   // ยอดค้างชำระแบบรายเดือนก่อน (concept เดียวกับ Admin) — งวดที่ต้องจ่ายถึงเดือนนี้
   const hasPlan = installments.length > 0;
-  const dueMonth = dueThisMonth(installments);
+  const dueMonth = dueUpToThisMonth(entries, installments);
 
   if (loading) {
     return (

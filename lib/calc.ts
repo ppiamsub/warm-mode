@@ -88,6 +88,30 @@ export function dueThisMonth(installments: { amount: number; due_date: string; p
   return cents / 100;
 }
 
+/**
+ * ยอดค้างเก็บถึงเดือนนี้ (แบบครบถ้วน) = งวดผ่อนที่ยังไม่จ่าย (ครบกำหนด ≤ เดือนนี้)
+ * + รายการที่ "ไม่มีแผนผ่อน" (นับยอดคงเหลือ ณ วันที่ตั้งรายการ ≤ เดือนนี้)
+ * ให้ตรงกับที่หน้ารายงานคำนวณ (report รวมรายการไม่มีแผนด้วย)
+ */
+export function dueUpToThisMonth(
+  entries: { id: string; amount: number; paid_amount: number; entry_date: string }[],
+  installments: { entry_id: string; amount: number; due_date: string; paid: boolean }[]
+): number {
+  const mk = currentMonthKeyTH();
+  const withPlan = new Set(installments.map((i) => i.entry_id));
+  let cents = 0;
+  for (const i of installments) {
+    if (!i.paid && String(i.due_date).slice(0, 7) <= mk) cents += Math.round(Number(i.amount) * 100);
+  }
+  for (const e of entries) {
+    if (withPlan.has(e.id)) continue; // มีแผนผ่อน → นับจากงวดไปแล้ว
+    if (String(e.entry_date).slice(0, 7) <= mk) {
+      cents += Math.round(Math.max(Number(e.amount) - Number(e.paid_amount), 0) * 100);
+    }
+  }
+  return cents / 100;
+}
+
 const TH_MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
 /** วันที่ไทยแบบสั้น: "2025-07-02" ➔ "2 ก.ค." */

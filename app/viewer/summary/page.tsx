@@ -64,7 +64,7 @@ export default function ViewerSummaryPage() {
         {loading ? (
           <div style={{ flex: 1, textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '40px 0' }}>กำลังโหลด...</div>
         ) : (
-          <ReportView rows={rows} exportName="warm-mode-ของฉัน" />
+          <ReportView rows={rows} exportName="warm-mode-ของฉัน" monthlyFirst />
         )}
 
         <div style={{ flex: 'none', background: colors.surface, borderTop: `1px solid ${colors.border}` }}>

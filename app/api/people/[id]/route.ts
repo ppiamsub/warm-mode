@@ -65,6 +65,13 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     .maybeSingle();
   if (!person) return NextResponse.json({ error: 'ไม่พบสมาชิก' }, { status: 404 });
 
+  // ผู้เข้าร่วมโหมด Viewer (LINE) ที่ผูกกับสมาชิกคนนี้
+  let viewer: { display_name: string | null; picture_url: string | null } | null = null;
+  if (person.user_id) {
+    const { data: u } = await db.from('users').select('display_name, picture_url').eq('id', person.user_id).maybeSingle();
+    if (u) viewer = { display_name: u.display_name, picture_url: u.picture_url };
+  }
+
   const { data: entries } = await db
     .from('entries')
     .select('id, person_id, description, amount, paid_amount, entry_date, created_at')
@@ -82,7 +89,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     installments = data ?? [];
   }
 
-  return NextResponse.json({ person, entries: entries ?? [], installments });
+  return NextResponse.json({ person, entries: entries ?? [], installments, viewer });
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {

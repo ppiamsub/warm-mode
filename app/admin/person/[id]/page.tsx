@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
-import { toEntryView, round2, dueThisMonth as calcDueThisMonth } from '@/lib/calc';
+import { toEntryView, round2, dueUpToThisMonth } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { GreenHeader } from '@/components/ui/GreenHeader';
 import { SummaryCard } from '@/components/SummaryCard';
@@ -19,6 +19,7 @@ export default function PersonDetailPage() {
   const { id } = useParams<{ id: string }>();
 
   const [person, setPerson] = useState<Person | null>(null);
+  const [viewer, setViewer] = useState<{ display_name: string | null; picture_url: string | null } | null>(null);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +36,7 @@ export default function PersonDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setPerson(data.person);
+        setViewer(data.viewer ?? null);
         setEntries(data.entries);
         setInstallments(data.installments ?? []);
       } else if (res.status === 401 || res.status === 403) {
@@ -144,7 +146,7 @@ export default function PersonDetailPage() {
   const paid = entries.reduce((s, e) => s + Number(e.paid_amount), 0);
   const remaining = Math.max(total - paid, 0);
   const hasPlan = installments.length > 0;
-  const dueThisMonth = calcDueThisMonth(installments);
+  const dueThisMonth = dueUpToThisMonth(entries, installments);
 
   // บันทึกการจ่าย ➔ PATCH paid_amount ลง DB
   const handleSave = async (addAmount: number) => {
@@ -195,6 +197,14 @@ export default function PersonDetailPage() {
     });
     if (res.ok) await load();
     else window.alert('แก้ไขไม่สำเร็จ');
+  };
+
+  // นำผู้เข้าร่วม (Viewer) ออก
+  const removeViewer = async () => {
+    if (!window.confirm('นำผู้เข้าร่วม (Viewer) คนนี้ออก? เขาจะหมดสิทธิ์ดูข้อมูลบัญชีนี้')) return;
+    const res = await fetch(`/api/people/${id}/viewer`, { method: 'DELETE' });
+    if (res.ok) await load();
+    else window.alert('นำออกไม่สำเร็จ');
   };
 
   // ลบสมาชิก (ลบรายการทั้งหมดของคนนี้ด้วย)
@@ -265,6 +275,27 @@ export default function PersonDetailPage() {
         {/* เนื้อหา */}
         <ScrollArea style={{ padding: '0 16px 16px' }}>
           <SummaryCard remaining={remaining} paid={paid} total={total} hasPlan={hasPlan} dueThisMonth={dueThisMonth} />
+
+          {/* ผู้เข้าร่วมโหมด Viewer (LINE) */}
+          {viewer && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: '12px 14px', marginTop: 14, boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)' }}>
+              {viewer.picture_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={viewer.picture_url} alt={viewer.display_name ?? ''} referrerPolicy="no-referrer" style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', flex: 'none', border: `1px solid ${colors.border}` }} />
+              ) : (
+                <div style={{ width: 42, height: 42, borderRadius: '50%', background: colors.paidBg, color: colors.green, display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', fontFamily: font.display, fontWeight: 700, fontSize: 18 }}>
+                  {(viewer.display_name ?? '?').charAt(0)}
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11.5, color: colors.inkMuted }}>ผู้เข้าร่วม (LINE)</div>
+                <div style={{ fontSize: 14.5, fontWeight: 600, color: colors.ink, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{viewer.display_name ?? 'ผู้ใช้ LINE'}</div>
+              </div>
+              <button onClick={removeViewer} style={{ flex: 'none', padding: '7px 13px', borderRadius: 999, background: '#fbe9e6', color: colors.overdueText, fontSize: 12.5, fontWeight: 600 }}>
+                นำออก
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '18px 2px 12px' }}>
             <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink }}>รายการ</div>

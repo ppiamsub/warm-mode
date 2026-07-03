@@ -8,8 +8,9 @@ import type { Session } from '@/types';
 export async function POST(req: Request) {
   let line_uid: string | undefined;
   let display_name: string | undefined;
+  let picture_url: string | undefined;
   try {
-    ({ line_uid, display_name } = await req.json());
+    ({ line_uid, display_name, picture_url } = await req.json());
   } catch {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 });
   }
@@ -19,16 +20,21 @@ export async function POST(req: Request) {
 
   const db = getSupabaseAdmin();
 
-  // upsert user จาก line_uid (ตัวตนหลัก)
+  // upsert user จาก line_uid (ตัวตนหลัก) — อัปเดตชื่อ/รูป LINE ให้ล่าสุดเสมอ
   let { data: user } = await db.from('users').select('id, display_name').eq('line_uid', line_uid).maybeSingle();
   if (!user) {
     const ins = await db
       .from('users')
-      .insert({ line_uid, display_name: display_name ?? null })
+      .insert({ line_uid, display_name: display_name ?? null, picture_url: picture_url ?? null })
       .select('id, display_name')
       .single();
     if (ins.error) return NextResponse.json({ error: ins.error.message }, { status: 500 });
     user = ins.data;
+  } else if (display_name || picture_url) {
+    const patch: Record<string, unknown> = {};
+    if (display_name) patch.display_name = display_name;
+    if (picture_url) patch.picture_url = picture_url;
+    await db.from('users').update(patch).eq('id', user.id);
   }
 
   // ตั้ง session ฐาน (ยังไม่เลือกบัญชี)

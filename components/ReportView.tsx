@@ -61,7 +61,7 @@ interface YearBucket {
   months: Bucket[];
 }
 
-export function ReportView({ rows, exportName = 'warm-mode-report' }: { rows: ReportRow[]; exportName?: string }) {
+export function ReportView({ rows, exportName = 'warm-mode-report', monthlyFirst = false }: { rows: ReportRow[]; exportName?: string; monthlyFirst?: boolean }) {
   const [exporting, setExporting] = useState(false);
   const [tab, setTab] = useState<'month' | 'year'>('month');
   const [selected, setSelected] = useState<Bucket | null>(null);
@@ -155,6 +155,13 @@ export function ReportView({ rows, exportName = 'warm-mode-report' }: { rows: Re
     [dueItems]
   );
 
+  // สำหรับมุมมองสมาชิก: มีแผนผ่อนไหม + ยอดที่ต้องจ่าย "ถึงเดือนนี้" (รวมงวดค้างสะสม + รายการไม่มีแผน) — ตรงกับหน้ารายการ
+  const hasPlan = useMemo(() => dueItems.some((it) => it.seq != null), [dueItems]);
+  const dueThisMonthAmount = useMemo(() => {
+    const cutoff = currentMonthKeyTH();
+    return round2(dueItems.filter((it) => !it.paid && it.due_date.slice(0, 7) <= cutoff).reduce((s, it) => s + (it.amount - it.collected), 0));
+  }, [dueItems]);
+
   const exportXlsx = async () => {
     setExporting(true);
     try {
@@ -224,12 +231,34 @@ export function ReportView({ rows, exportName = 'warm-mode-report' }: { rows: Re
       <ScrollArea style={{ padding: '16px 16px 16px' }}>
         {/* สรุปยอดรวม */}
         <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 18, padding: 16, boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)', marginBottom: 14 }}>
-          <div style={{ fontSize: 12.5, color: colors.inkMuted }}>ยอดที่ต้องจ่ายทั้งหมด</div>
-          <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, color: colors.ink, marginTop: 2 }}>{baht(grand.due)}</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <Stat label="เก็บแล้ว" value={baht(grand.collected)} color={colors.paidText} />
-            <Stat label="ค้างจ่าย" value={baht(grand.outstanding)} color={colors.partialText} />
-          </div>
+          {monthlyFirst && hasPlan ? (
+            <>
+              {/* มุมมองสมาชิก: ยอดที่ต้องจ่ายในเดือนนี้ก่อน แล้วค่อยค้างทั้งหมด (เหมือนหน้ารายการ) */}
+              <div style={{ fontSize: 12.5, color: colors.inkMuted }}>ยอดที่ต้องจ่ายในเดือนนี้</div>
+              <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, color: colors.ink, marginTop: 2 }}>{baht(dueThisMonthAmount)}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <Stat label="ค้างชำระทั้งหมด" value={baht(grand.outstanding)} color={colors.partialText} />
+                <Stat label="เก็บแล้ว" value={baht(grand.collected)} color={colors.paidText} />
+              </div>
+            </>
+          ) : monthlyFirst ? (
+            <>
+              <div style={{ fontSize: 12.5, color: colors.inkMuted }}>ยอดค้างชำระทั้งหมด</div>
+              <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, color: colors.ink, marginTop: 2 }}>{baht(grand.outstanding)}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <Stat label="เก็บแล้ว" value={baht(grand.collected)} color={colors.paidText} />
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 12.5, color: colors.inkMuted }}>ยอดที่ต้องจ่ายทั้งหมด</div>
+              <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 30, color: colors.ink, marginTop: 2 }}>{baht(grand.due)}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <Stat label="เก็บแล้ว" value={baht(grand.collected)} color={colors.paidText} />
+                <Stat label="ค้างจ่าย" value={baht(grand.outstanding)} color={colors.partialText} />
+              </div>
+            </>
+          )}
         </div>
 
         {/* export */}

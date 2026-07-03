@@ -8,6 +8,7 @@ export interface User {
   id: string;
   line_uid: string;
   display_name: string | null;
+  picture_url: string | null;
   created_at: string;
 }
 

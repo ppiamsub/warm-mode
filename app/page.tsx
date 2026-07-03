@@ -20,7 +20,7 @@ export default function LoginPage() {
         await fetch('/api/auth/line', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ line_uid: profile.userId, display_name: profile.displayName }),
+          body: JSON.stringify({ line_uid: profile.userId, display_name: profile.displayName, picture_url: profile.pictureUrl }),
         });
       } catch {
         /* ไม่เป็นไร — ไปหน้า hub ต่อ (โหมด demo) */
