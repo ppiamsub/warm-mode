@@ -55,6 +55,25 @@ export default function AccountHubPage() {
     router.push(acc.role === 'admin' ? '/admin' : '/viewer');
   };
 
+  // ออกจากบัญชี (ตัดการเชื่อมต่อ Viewer) โดยตรงจากหน้า Hub
+  const disconnectViewer = async (acc: Account) => {
+    if (!window.confirm(`ออกจากบัญชี "${acc.bookName}"?\nคุณจะไม่เห็นข้อมูลบัญชีนี้อีก (เข้าใหม่ด้วยรหัสส่วนตัวได้ภายหลัง)`)) return;
+    try {
+      const res = await fetch('/api/me/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookId: acc.bookId }),
+      });
+      if (res.ok) {
+        setAccounts((prev) => prev.filter((a) => a.bookId !== acc.bookId));
+      } else {
+        window.alert('ออกจากบัญชีไม่สำเร็จ');
+      }
+    } catch {
+      window.alert('ออกจากบัญชีไม่สำเร็จ');
+    }
+  };
+
   const createBook = async () => {
     try {
       const res = await fetch('/api/books', {
@@ -170,36 +189,47 @@ export default function AccountHubPage() {
                   {filtered.map((acc) => {
                     const isAdmin = acc.role === 'admin';
                     return (
-                      <button
+                      <div
                         key={acc.bookId}
-                        onClick={() => selectAccount(acc)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 13,
+                          gap: 10,
                           background: colors.surface,
                           border: `1px solid ${colors.border}`,
                           borderRadius: 18,
                           padding: 15,
                           boxShadow: '0 2px 8px rgba(16,40,28,.05)',
-                          width: '100%',
-                          textAlign: 'left',
                         }}
                       >
-                        <div style={{ width: 50, height: 50, borderRadius: 15, background: isAdmin ? gradients.brandDiag : colors.paidBg, color: isAdmin ? '#fff' : colors.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font.display, fontWeight: 700, fontSize: 23, flex: 'none' }}>
-                          {acc.bookName.charAt(0)}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ fontSize: 16, fontWeight: 600, color: colors.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.bookName}</div>
-                            <span style={{ flex: 'none', fontSize: 11, fontWeight: 600, color: isAdmin ? colors.green : colors.partialText, background: isAdmin ? colors.paidBg : colors.partialBg, padding: '2px 8px', borderRadius: 999 }}>
-                              {isAdmin ? 'ผู้ดูแล' : 'สมาชิก'}
-                            </span>
+                        <button
+                          onClick={() => selectAccount(acc)}
+                          style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 13, background: 'transparent', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+                        >
+                          <div style={{ width: 50, height: 50, borderRadius: 15, background: isAdmin ? gradients.brandDiag : colors.paidBg, color: isAdmin ? '#fff' : colors.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font.display, fontWeight: 700, fontSize: 23, flex: 'none' }}>
+                            {acc.bookName.charAt(0)}
                           </div>
-                          <div style={{ fontSize: 12.5, color: colors.inkMuted, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.subtitle}</div>
-                        </div>
-                        <div style={{ color: colors.inkFaint, fontSize: 22, flex: 'none' }}>›</div>
-                      </button>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ fontSize: 16, fontWeight: 600, color: colors.ink, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.bookName}</div>
+                              <span style={{ flex: 'none', fontSize: 11, fontWeight: 600, color: isAdmin ? colors.green : colors.partialText, background: isAdmin ? colors.paidBg : colors.partialBg, padding: '2px 8px', borderRadius: 999 }}>
+                                {isAdmin ? 'ผู้ดูแล' : 'สมาชิก'}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: 12.5, color: colors.inkMuted, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{acc.subtitle}</div>
+                          </div>
+                        </button>
+                        {isAdmin ? (
+                          <div style={{ color: colors.inkFaint, fontSize: 22, flex: 'none' }}>›</div>
+                        ) : (
+                          <button
+                            onClick={() => disconnectViewer(acc)}
+                            style={{ flex: 'none', padding: '8px 12px', borderRadius: 999, background: '#fbe9e6', color: colors.overdueText, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer' }}
+                          >
+                            ออกจากบัญชี
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
