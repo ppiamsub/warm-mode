@@ -2,9 +2,9 @@
 // Dashboard สรุปยอด (Admin) — ใช้คอมโพเนนต์ ReportView ร่วมกับ Viewer
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { colors, font, gradients } from '@/lib/theme';
+import { colors, font } from '@/lib/theme';
 import { Phone } from '@/components/ui/Primitives';
-import { BrandMark } from '@/components/ui/BrandLogo';
+import { GreenHeader } from '@/components/ui/GreenHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { IconBack } from '@/components/ui/Icons';
 import { ReportView, type ReportRow } from '@/components/ReportView';
@@ -29,8 +29,7 @@ export default function SummaryPage() {
   return (
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
-        <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 22px', color: '#fff' }}>
-          <BrandMark style={{ marginBottom: 16 }} />
+        <GreenHeader style={{ padding: '56px 20px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button onClick={() => router.push('/admin')} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <IconBack size={18} color="#fff" />
@@ -38,7 +37,7 @@ export default function SummaryPage() {
             <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16 }}>สรุปยอด</div>
             <div style={{ width: 38 }} />
           </div>
-        </div>
+        </GreenHeader>
 
         {loading ? (
           <div style={{ flex: 1, textAlign: 'center', color: colors.inkMuted, fontSize: 14, padding: '40px 0' }}>กำลังโหลด...</div>

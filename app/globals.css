@@ -21,6 +21,7 @@ body {
 
 /* กรอบมือถือกลางจอเมื่อเปิดบน desktop (LIFF จะเต็มจอบนมือถือจริง) */
 .phone-shell {
+  min-height: 100vh; /* fallback */
   min-height: 100dvh;
   display: flex;
   justify-content: center;
@@ -34,7 +35,9 @@ body {
   width: 100%;
   max-width: 440px;
   /* height ที่ "แน่นอน" (ไม่ใช่ min-height) เพื่อให้ flex:1 ของเนื้อหา scroll ได้จริง
-     และแถบเมนูล่างถูกตรึงในจอเสมอ — สำคัญมากบน LINE LIFF ที่ไม่มี browser chrome */
+     และแถบเมนูล่างถูกตรึงในจอเสมอ — สำคัญมากบน LINE LIFF ที่ไม่มี browser chrome
+     ใส่ 100vh เป็น fallback เผื่อ webview เก่าไม่รองรับหน่วย dvh */
+  height: 100vh;
   height: 100dvh;
   background: #eef5f0;
   position: relative;
@@ -46,6 +49,7 @@ body {
   .phone {
     margin: 26px 0;
     min-height: auto;
+    height: calc(100vh - 52px); /* fallback */
     height: calc(100dvh - 52px);
     border-radius: 42px;
     border: 1px solid rgba(255, 255, 255, 0.6);

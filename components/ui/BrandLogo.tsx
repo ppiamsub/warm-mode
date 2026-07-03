@@ -2,37 +2,6 @@
 import React from 'react';
 import Image from 'next/image';
 import logo from '@/src/logo.png';
-import { font } from '@/lib/theme';
-
-/** แถบแบรนด์ โลโก้เล็ก + "WARM MODE" — ใช้บนหัว (header สีเขียว) ทุกหน้า เพื่อให้แคปหน้าจอมีโลโก้ติดเสมอ */
-export function BrandMark({ style }: { style?: React.CSSProperties }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 9, ...style }}>
-      <span
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: 9,
-          overflow: 'hidden',
-          flex: 'none',
-          background: '#0a2318',
-          border: '1px solid rgba(255,255,255,.30)',
-          boxShadow: '0 0 10px rgba(40,183,121,.40)',
-          display: 'block',
-        }}
-      >
-        <Image
-          src={logo}
-          alt="Warm Mode"
-          width={30}
-          height={30}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: '64% 29%', display: 'block' }}
-        />
-      </span>
-      <span style={{ fontFamily: font.display, fontWeight: 700, fontSize: 13, letterSpacing: 2.5, color: '#fff', opacity: 0.95 }}>WARM MODE</span>
-    </div>
-  );
-}
 
 export function BrandLogo({
   size = 240,
@@ -63,7 +32,7 @@ export function BrandLogo({
       {/* ประกายนีออนด้านบน */}
       <div
         aria-hidden
-        style={{ position: 'absolute', inset: 0, borderRadius: 30, background: 'linear-gradient(180deg, rgba(131, 219, 175, 0.1) 0%, rgba(102,230,166,0) 38%)', pointerEvents: 'none' }}
+        style={{ position: 'absolute', inset: 0, borderRadius: 30, background: 'linear-gradient(180deg, rgba(102,230,166,.10) 0%, rgba(102,230,166,0) 38%)', pointerEvents: 'none' }}
       />
       <Image
         src={logo}

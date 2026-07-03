@@ -326,7 +326,7 @@ function YearCard({ y, onClick }: { y: YearBucket; onClick: () => void }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 15, color: colors.ink }}>{y.label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 12, color: colors.inkMuted }}>{y.months.length} เดือน · จ่ายแล้ว {y.paidCount}/{y.count} งวด</span>
+          <span style={{ fontSize: 12, color: colors.inkMuted }}>{y.months.length} เดือน · จ่ายแล้ว {y.paidCount}/{y.count} รายการ</span>
           <IconChevron size={16} color={colors.inkMuted} style={{ transform: 'rotate(-90deg)' }} />
         </div>
       </div>

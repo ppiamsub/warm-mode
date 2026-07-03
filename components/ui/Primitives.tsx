@@ -14,8 +14,9 @@ export function Phone({ children }: { children: React.ReactNode }) {
 
 /** พื้นที่เนื้อหาแบบ scroll ได้ (ระหว่าง header กับ bottom bar) */
 export function ScrollArea({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  // minHeight:0 ให้ flex item หดได้จริงและ scroll ภายใน (กันดันแถบเมนูล่างตกจอ)
   return (
-    <div className="no-scrollbar" style={{ flex: 1, overflow: 'auto', ...style }}>
+    <div className="no-scrollbar" style={{ flex: 1, minHeight: 0, overflow: 'auto', ...style }}>
       {children}
     </div>
   );

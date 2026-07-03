@@ -2,10 +2,10 @@
 // Screen 5 · หน้าสมาชิก (Viewer) — ยอดของฉัน + รายการ + ประวัติการจ่าย (ข้อมูลจริง, อ่านอย่างเดียว)
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { colors, font, gradients } from '@/lib/theme';
+import { colors, font } from '@/lib/theme';
 import { baht, toEntryView, thaiFull, dueThisMonth } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
-import { BrandMark } from '@/components/ui/BrandLogo';
+import { GreenHeader } from '@/components/ui/GreenHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { EntryCard } from '@/components/EntryCard';
 import { IconInfo, IconCheck, IconChat } from '@/components/ui/Icons';
@@ -70,8 +70,7 @@ export default function ViewerPage() {
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         {/* Header */}
-        <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 24px', color: '#fff' }}>
-          <BrandMark style={{ marginBottom: 16 }} />
+        <GreenHeader style={{ padding: '56px 20px 22px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 12, opacity: 0.82 }}>สวัสดี</div>
@@ -115,7 +114,7 @@ export default function ViewerPage() {
             <span>จ่ายแล้ว {baht(paid)}</span>
             <span>ยอดรวม {baht(total)}</span>
           </div>
-        </div>
+        </GreenHeader>
 
         {/* เนื้อหา */}
         <ScrollArea style={{ padding: '16px 16px 28px' }}>

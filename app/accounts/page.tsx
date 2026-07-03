@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
-import { BrandMark } from '@/components/ui/BrandLogo';
+import { GreenHeader } from '@/components/ui/GreenHeader';
 import { IconPlus, IconSearch } from '@/components/ui/Icons';
 import { useLiff } from '@/components/LiffProvider';
 import type { Account } from '@/types';
@@ -93,8 +93,7 @@ export default function AccountHubPage() {
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         {/* ── Header + โปรไฟล์ LINE ── */}
-        <div style={{ flex: 'none', background: gradients.header, padding: '52px 20px 26px', color: '#fff' }}>
-          <BrandMark style={{ marginBottom: 18 }} />
+        <GreenHeader style={{ padding: '52px 20px 26px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
               {pictureUrl ? (
@@ -124,7 +123,7 @@ export default function AccountHubPage() {
           </div>
           <div style={{ marginTop: 22, fontFamily: font.display, fontWeight: 700, fontSize: 23 }}>เลือกบัญชี</div>
           <div style={{ fontSize: 13, opacity: 0.85, marginTop: 2 }}>เลือกบัญชีที่ต้องการเข้าใช้งาน หรือเพิ่มบัญชีใหม่</div>
-        </div>
+        </GreenHeader>
 
         <ScrollArea style={{ padding: '18px 16px 24px' }}>
           {loading ? (

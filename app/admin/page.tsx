@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
 import { baht } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
-import { BrandMark } from '@/components/ui/BrandLogo';
+import { GreenHeader } from '@/components/ui/GreenHeader';
 import { PersonCard } from '@/components/PersonCard';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { IconBell, IconSearch, IconPlus, IconGear } from '@/components/ui/Icons';
@@ -107,8 +107,7 @@ export default function AdminDashboard() {
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
         {/* ── Header สีเขียว ── */}
-        <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 24px', color: '#fff' }}>
-          <BrandMark style={{ marginBottom: 16 }} />
+        <GreenHeader style={{ padding: '56px 20px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
               <button
@@ -162,7 +161,7 @@ export default function AdminDashboard() {
               <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 17, marginTop: 2 }}>{data ? `${data.headline.peopleCount} คน` : '—'}</div>
             </div>
           </div>
-        </div>
+        </GreenHeader>
 
         {/* ── รายชื่อสมาชิก ── */}
         <ScrollArea style={{ padding: '18px 16px 16px' }}>

@@ -2,9 +2,9 @@
 // ประวัติการทำรายการ (Activity Log) — timeline ของทุกการกระทำในบัญชี
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { colors, font, gradients } from '@/lib/theme';
+import { colors, font } from '@/lib/theme';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
-import { BrandMark } from '@/components/ui/BrandLogo';
+import { GreenHeader } from '@/components/ui/GreenHeader';
 import { BottomNav } from '@/components/ui/BottomNav';
 import { IconBack } from '@/components/ui/Icons';
 import { ActivityList, type Activity } from '@/components/ActivityList';
@@ -29,8 +29,7 @@ export default function ActivityPage() {
   return (
     <Phone>
       <div style={{ height: '100%', minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: colors.bg }}>
-        <div style={{ flex: 'none', background: gradients.header, padding: '56px 20px 24px', color: '#fff' }}>
-          <BrandMark style={{ marginBottom: 16 }} />
+        <GreenHeader style={{ padding: '56px 20px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button onClick={() => router.push('/admin')} style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <IconBack size={18} color="#fff" />
@@ -39,7 +38,7 @@ export default function ActivityPage() {
             <div style={{ width: 38 }} />
           </div>
           <div style={{ marginTop: 14, fontSize: 12.5, opacity: 0.85 }}>บันทึกการเพิ่ม / แก้ไข / ลบ / กดจ่าย / แผนผ่อน ทั้งหมดในบัญชี</div>
-        </div>
+        </GreenHeader>
 
         <ScrollArea style={{ padding: '16px 16px 16px' }}>
           {loading ? (
