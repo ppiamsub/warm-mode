@@ -26,10 +26,30 @@ export async function GET() {
       .select('id, person_id, description, amount, paid_amount, entry_date, created_at')
       .in('person_id', ids)
       .order('entry_date', { ascending: false });
-    rows = (data ?? []).map((e) => ({
+
+    const entries = data ?? [];
+
+    // ดึงงวดผ่อนของทุกรายการในบัญชี (ใช้จัดกลุ่มรายงานตามกำหนดชำระ)
+    const entryIds = entries.map((e) => e.id);
+    const instByEntry = new Map<string, any[]>();
+    if (entryIds.length) {
+      const { data: inst } = await db
+        .from('installments')
+        .select('id, entry_id, seq, amount, due_date, paid, paid_at')
+        .in('entry_id', entryIds)
+        .order('seq', { ascending: true });
+      for (const i of inst ?? []) {
+        const arr = instByEntry.get(i.entry_id) ?? [];
+        arr.push(i);
+        instByEntry.set(i.entry_id, arr);
+      }
+    }
+
+    rows = entries.map((e) => ({
       ...e,
       person_name: nameById.get(e.person_id) ?? '',
       remaining: Math.max(Number(e.amount) - Number(e.paid_amount), 0),
+      installments: instByEntry.get(e.id) ?? [],
     }));
   }
 

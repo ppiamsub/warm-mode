@@ -77,6 +77,12 @@ export const IconCheck = ({ size, color, strokeWidth, ...r }: P) => (
   </svg>
 );
 
+export const IconChevron = ({ size, color, strokeWidth, ...r }: P) => (
+  <svg {...base(size, color, strokeWidth ?? 2.4)} {...r}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
 export const IconInfo = ({ size, color, strokeWidth, ...r }: P) => (
   <svg {...base(size, color, strokeWidth)} {...r}>
     <circle cx="12" cy="12" r="9" />

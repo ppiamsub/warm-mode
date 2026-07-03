@@ -4,7 +4,7 @@ import React from 'react';
 import { colors, font, statusLabel } from '@/lib/theme';
 import { baht, thaiFull } from '@/lib/calc';
 import { ProgressBar, StatusBadge } from '@/components/ui/Primitives';
-import { IconCheck } from '@/components/ui/Icons';
+import { IconCheck, IconChevron } from '@/components/ui/Icons';
 import type { EntryView, Installment } from '@/types';
 
 export function EntryCard({
@@ -31,6 +31,9 @@ export function EntryCard({
   const hasPlan = installments.length > 0;
   // แก้ไขรายการได้เฉพาะเมื่อยังไม่มีการจ่าย และไม่มีแผนผ่อน
   const editable = !readOnly && entry.paid_amount === 0 && !hasPlan;
+  const paidCount = installments.filter((i) => i.paid).length;
+  // เปิด/ปิด ดูรายละเอียดงวดผ่อน (เริ่มต้นแบบยุบไว้)
+  const [expanded, setExpanded] = React.useState(false);
 
   return (
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)' }}>
@@ -59,13 +62,21 @@ export function EntryCard({
       {/* งวดผ่อน */}
       {hasPlan ? (
         <div style={{ marginTop: 12, borderTop: `1px dashed ${colors.border}`, paddingTop: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.ink }}>แผนผ่อน {installments.length} งวด</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: expanded ? 8 : 0 }}>
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, textAlign: 'left' }}
+            >
+              <IconChevron size={16} color={colors.inkMuted} style={{ flex: 'none', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }} />
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.ink }}>แผนผ่อน {installments.length} งวด</span>
+              <span style={{ fontSize: 11.5, color: colors.inkMuted }}>· จ่ายแล้ว {paidCount}/{installments.length}</span>
+            </button>
             {!readOnly && onDeletePlan && (
-              <button onClick={onDeletePlan} style={{ fontSize: 12, color: colors.overdueText, fontWeight: 600 }}>ยกเลิกแผน</button>
+              <button onClick={onDeletePlan} style={{ fontSize: 12, color: colors.overdueText, fontWeight: 600, flex: 'none', marginLeft: 10 }}>ยกเลิกแผน</button>
             )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div style={{ display: expanded ? 'flex' : 'none', flexDirection: 'column', gap: 7 }}>
             {installments.map((ins) => (
               <div key={ins.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: ins.paid ? colors.paidBg : '#f6f8f7', borderRadius: 11, padding: '9px 11px' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: ins.paid ? colors.green : '#dfe6e1', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none', fontSize: 12, fontWeight: 700, fontFamily: font.display }}>
