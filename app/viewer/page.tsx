@@ -36,6 +36,14 @@ export default function ViewerPage() {
     })();
   }, []);
 
+  // ออกจากบัญชีนี้เอง (ตัดการเชื่อมต่อ Viewer)
+  const leaveAccount = async () => {
+    if (!window.confirm('ออกจากบัญชีนี้? คุณจะไม่เห็นข้อมูลบัญชีนี้อีก (เข้าใหม่ด้วยรหัสส่วนตัวได้ภายหลัง)')) return;
+    const res = await fetch('/api/me/leave', { method: 'POST' });
+    if (res.ok) router.replace('/accounts');
+    else window.alert('ออกจากบัญชีไม่สำเร็จ');
+  };
+
   const views = useMemo(() => entries.map(toEntryView), [entries]);
   const installmentsByEntry = useMemo(() => {
     const m = new Map<string, Installment[]>();
@@ -159,6 +167,14 @@ export default function ViewerPage() {
           <button style={{ marginTop: 18, width: '100%', height: 48, borderRadius: 14, border: '1.5px solid #cfe0d6', background: colors.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: colors.green, fontFamily: font.display, fontWeight: 600, fontSize: 15 }}>
             <IconChat size={17} color={colors.green} strokeWidth={2} />
             ติดต่อผู้ดูแล
+          </button>
+
+          {/* ออกจากบัญชีนี้เอง */}
+          <button
+            onClick={leaveAccount}
+            style={{ marginTop: 10, width: '100%', height: 46, borderRadius: 14, border: '1.5px solid #f0d3ce', background: colors.surface, color: colors.overdueText, fontFamily: font.display, fontWeight: 600, fontSize: 14.5 }}
+          >
+            ออกจากบัญชีนี้
           </button>
         </ScrollArea>
 

@@ -53,6 +53,18 @@ export async function POST(req: Request) {
     .eq('personal_code', code)
     .maybeSingle();
   if (person) {
+    // ถ้าเป็น "ผู้ดูแล" ของบัญชีนี้อยู่แล้ว → ห้ามลดสิทธิ์ลงเป็น Viewer (กันบัคกลับโหมด admin ไม่ได้)
+    const { data: existing } = await db
+      .from('memberships')
+      .select('role')
+      .eq('user_id', session.userId)
+      .eq('book_id', person.book_id)
+      .maybeSingle();
+    if (existing?.role === 'admin') {
+      setSessionCookie({ ...session, bookId: person.book_id, role: 'admin', personId: undefined });
+      return NextResponse.json({ role: 'admin', bookId: person.book_id, note: 'คุณเป็นผู้ดูแลบัญชีนี้อยู่แล้ว' });
+    }
+
     await db.from('people').update({ user_id: session.userId }).eq('id', person.id);
     const up = await db.from('memberships').upsert(
       { user_id: session.userId, book_id: person.book_id, role: 'viewer', person_id: person.id },
