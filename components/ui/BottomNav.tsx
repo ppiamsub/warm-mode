@@ -1,5 +1,5 @@
 'use client';
-// แถบเมนูล่างสำหรับหน้า Admin
+// แถบเมนูล่าง — ใช้ทั้งฝั่ง Admin และ Viewer (สลับปลายทางด้วย variant)
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/lib/theme';
@@ -7,15 +7,23 @@ import { IconHome, IconChart, IconHistory, IconProfile } from '@/components/ui/I
 
 type Tab = 'home' | 'summary' | 'activity' | 'profile';
 
-const items: { key: Tab; label: string; Icon: typeof IconHome; href: string }[] = [
+const ADMIN: { key: Tab; label: string; Icon: typeof IconHome; href: string }[] = [
   { key: 'home', label: 'หน้าหลัก', Icon: IconHome, href: '/admin' },
   { key: 'summary', label: 'สรุปยอด', Icon: IconChart, href: '/admin/summary' },
   { key: 'activity', label: 'ประวัติ', Icon: IconHistory, href: '/admin/activity' },
   { key: 'profile', label: 'บัญชี', Icon: IconProfile, href: '/accounts' },
 ];
 
-export function BottomNav({ active = 'home' }: { active?: Tab }) {
+const VIEWER: { key: Tab; label: string; Icon: typeof IconHome; href: string }[] = [
+  { key: 'home', label: 'หน้าหลัก', Icon: IconHome, href: '/viewer' },
+  { key: 'summary', label: 'สรุปยอด', Icon: IconChart, href: '/viewer/summary' },
+  { key: 'activity', label: 'ประวัติ', Icon: IconHistory, href: '/viewer/activity' },
+  { key: 'profile', label: 'บัญชี', Icon: IconProfile, href: '/accounts' },
+];
+
+export function BottomNav({ active = 'home', variant = 'admin' }: { active?: Tab; variant?: 'admin' | 'viewer' }) {
   const router = useRouter();
+  const items = variant === 'viewer' ? VIEWER : ADMIN;
   return (
     <div style={{ display: 'flex', justifyContent: 'space-around', padding: '2px 20px 26px' }}>
       {items.map(({ key, label, Icon, href }) => {

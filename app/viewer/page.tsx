@@ -3,9 +3,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
-import { baht, toEntryView, thaiFull } from '@/lib/calc';
+import { baht, toEntryView, thaiFull, dueThisMonth } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { BrandMark } from '@/components/ui/BrandLogo';
+import { BottomNav } from '@/components/ui/BottomNav';
 import { EntryCard } from '@/components/EntryCard';
 import { IconInfo, IconCheck, IconChat } from '@/components/ui/Icons';
 import type { Entry, Installment, Person } from '@/types';
@@ -50,6 +51,9 @@ export default function ViewerPage() {
   const remaining = Math.max(total - paid, 0);
   const progress = total > 0 ? paid / total : 0;
   const history = views.filter((v) => v.paid_amount > 0);
+  // ยอดค้างชำระแบบรายเดือนก่อน (concept เดียวกับ Admin) — งวดที่ต้องจ่ายถึงเดือนนี้
+  const hasPlan = installments.length > 0;
+  const dueMonth = dueThisMonth(installments);
 
   if (loading) {
     return (
@@ -87,8 +91,21 @@ export default function ViewerPage() {
           </div>
 
           <div style={{ marginTop: 22 }}>
-            <div style={{ fontSize: 13, opacity: 0.85 }}>ยอดค้างชำระทั้งหมด</div>
-            <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 44, letterSpacing: '-.5px', marginTop: 3 }}>{baht(remaining)}</div>
+            {hasPlan ? (
+              <>
+                <div style={{ fontSize: 13, opacity: 0.85 }}>ยอดที่ต้องชำระเดือนนี้</div>
+                <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 44, letterSpacing: '-.5px', marginTop: 3 }}>{baht(dueMonth)}</div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, background: 'rgba(255,255,255,.14)', border: '1px solid rgba(255,255,255,.18)', borderRadius: 999, padding: '4px 12px' }}>
+                  <span style={{ fontSize: 12, opacity: 0.85 }}>ค้างชำระทั้งหมด</span>
+                  <span className="tabular" style={{ fontFamily: font.display, fontWeight: 600, fontSize: 13.5 }}>{baht(remaining)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, opacity: 0.85 }}>ยอดค้างชำระทั้งหมด</div>
+                <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 44, letterSpacing: '-.5px', marginTop: 3 }}>{baht(remaining)}</div>
+              </>
+            )}
           </div>
 
           <div style={{ height: 8, borderRadius: 999, background: 'rgba(255,255,255,.22)', marginTop: 16, overflow: 'hidden' }}>
@@ -145,6 +162,10 @@ export default function ViewerPage() {
             ติดต่อผู้ดูแล
           </button>
         </ScrollArea>
+
+        <div style={{ flex: 'none', background: colors.surface, borderTop: `1px solid ${colors.border}` }}>
+          <BottomNav active="home" variant="viewer" />
+        </div>
       </div>
     </Phone>
   );
