@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { colors, font, gradients } from '@/lib/theme';
-import { toEntryView } from '@/lib/calc';
+import { toEntryView, round2, dueThisMonth as calcDueThisMonth } from '@/lib/calc';
 import { Phone, ScrollArea } from '@/components/ui/Primitives';
 import { SummaryCard } from '@/components/SummaryCard';
 import { EntryCard } from '@/components/EntryCard';
@@ -85,23 +85,31 @@ export default function PersonDetailPage() {
   const editInstallment = async (ins: Installment) => {
     const input = window.prompt(`แก้ไขยอดงวดที่ ${ins.seq} (บาท)`, String(ins.amount));
     if (input == null) return;
-    const amount = Number(input.replace(/[^\d.]/g, ''));
+    const amount = round2(Number(input.replace(/[^\d.]/g, '')));
     if (!amount || amount <= 0) {
       window.alert('ยอดต้องมากกว่า 0');
       return;
     }
-    await fetch(`/api/installments/${ins.id}`, {
+    const res = await fetch(`/api/installments/${ins.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount }),
     });
+    if (res.status === 409) {
+      window.alert('รายการนี้มีการชำระแล้ว แก้ไขงวดไม่ได้');
+      return;
+    }
     await load();
   };
 
   // ยกเลิกแผนผ่อน
   const deletePlan = async (entryId: string) => {
-    if (!window.confirm('ยกเลิกแผนผ่อนของรายการนี้?')) return;
-    await fetch(`/api/entries/${entryId}/plan`, { method: 'DELETE' });
+    // ยืนยันแล้วในการ์ด (EntryCard) — ยกเลิกไม่ได้ถ้ามียอดชำระแล้ว (server ป้องกันซ้ำ 409)
+    const res = await fetch(`/api/entries/${entryId}/plan`, { method: 'DELETE' });
+    if (res.status === 409) {
+      alert('รายการนี้มีการชำระแล้ว ยกเลิกแผนไม่ได้');
+      return;
+    }
     await load();
   };
 
@@ -134,12 +142,14 @@ export default function PersonDetailPage() {
   const total = entries.reduce((s, e) => s + Number(e.amount), 0);
   const paid = entries.reduce((s, e) => s + Number(e.paid_amount), 0);
   const remaining = Math.max(total - paid, 0);
+  const hasPlan = installments.length > 0;
+  const dueThisMonth = calcDueThisMonth(installments);
 
   // บันทึกการจ่าย ➔ PATCH paid_amount ลง DB
   const handleSave = async (addAmount: number) => {
     if (!editing) return;
     setBusy(true);
-    const newPaid = Math.min(editing.paid_amount + addAmount, editing.amount);
+    const newPaid = round2(Math.min(editing.paid_amount + addAmount, editing.amount));
     try {
       const res = await fetch(`/api/entries/${editing.id}`, {
         method: 'PATCH',
@@ -253,7 +263,7 @@ export default function PersonDetailPage() {
 
         {/* เนื้อหา */}
         <ScrollArea style={{ padding: '0 16px 16px' }}>
-          <SummaryCard remaining={remaining} paid={paid} total={total} />
+          <SummaryCard remaining={remaining} paid={paid} total={total} hasPlan={hasPlan} dueThisMonth={dueThisMonth} />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '18px 2px 12px' }}>
             <div style={{ fontFamily: font.display, fontWeight: 600, fontSize: 16, color: colors.ink }}>รายการ</div>

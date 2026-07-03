@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
-import { summarize, thaiShort } from '@/lib/calc';
+import { summarize, thaiShort, dueThisMonth } from '@/lib/calc';
 import type { Entry, Person, PersonSummary } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -52,10 +52,20 @@ export async function GET() {
   const totalRemaining = summaries.reduce((s, x) => s + x.totalRemaining, 0);
   const totalPaid = entries.reduce((s, e) => s + Number(e.paid_amount), 0);
 
+  // งวดผ่อนทั้งบัญชี → มีแผนผ่อนไหม + ยอดค้างเก็บในเดือนนี้
+  let installments: { amount: number; due_date: string; paid: boolean }[] = [];
+  const entryIds = entries.map((e) => e.id);
+  if (entryIds.length) {
+    const { data } = await db.from('installments').select('amount, due_date, paid').in('entry_id', entryIds);
+    installments = (data ?? []) as typeof installments;
+  }
+  const hasPlan = installments.length > 0;
+  const dueThisMonthAmount = dueThisMonth(installments);
+
   return NextResponse.json({
     bookId: session.bookId,
     bookName: book?.name ?? 'บัญชีของฉัน',
-    headline: { totalRemaining, totalPaid, peopleCount: peopleList.length },
+    headline: { totalRemaining, totalPaid, peopleCount: peopleList.length, hasPlan, dueThisMonth: dueThisMonthAmount },
     people: summaries,
   });
 }

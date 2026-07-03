@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireSession, requireAdmin } from '@/lib/guard';
+import { round2 } from '@/lib/calc';
 
 export async function GET(req: Request) {
   let session;
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'invalid body' }, { status: 400 });
   }
 
-  const { person_id, description, amount, entry_date } = body;
+  const { person_id, description, entry_date } = body;
+  const amount = round2(Number(body.amount)); // ทศนิยมสูงสุด 2 ตำแหน่ง
   // Validate: amount ต้อง > 0 (กฎเหล็ก DB Agent)
   if (!person_id || !description?.trim() || !amount || amount <= 0) {
     return NextResponse.json({ error: 'ข้อมูลไม่ครบ หรือ amount ต้องมากกว่า 0' }, { status: 400 });

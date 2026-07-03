@@ -32,8 +32,12 @@ export function EntryCard({
   // แก้ไขรายการได้เฉพาะเมื่อยังไม่มีการจ่าย และไม่มีแผนผ่อน
   const editable = !readOnly && entry.paid_amount === 0 && !hasPlan;
   const paidCount = installments.filter((i) => i.paid).length;
+  // มียอดชำระแล้ว → ล็อก: แก้ไขยอดงวด/ยกเลิกแผนไม่ได้
+  const locked = paidCount > 0 || entry.paid_amount > 0;
   // เปิด/ปิด ดูรายละเอียดงวดผ่อน (เริ่มต้นแบบยุบไว้)
   const [expanded, setExpanded] = React.useState(false);
+  // ยืนยันก่อนยกเลิกแผน (สองจังหวะ)
+  const [confirmCancel, setConfirmCancel] = React.useState(false);
 
   return (
     <div style={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, boxShadow: '0 1px 2px rgba(12,44,28,.05), 0 8px 20px rgba(16,64,42,.06)' }}>
@@ -62,19 +66,31 @@ export function EntryCard({
       {/* งวดผ่อน */}
       {hasPlan ? (
         <div style={{ marginTop: 12, borderTop: `1px dashed ${colors.border}`, paddingTop: 10 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: expanded ? 8 : 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: expanded ? 8 : 0 }}>
+            {/* ซ้าย: ยกเลิกแผน (ยืนยันก่อน) — ล็อกเมื่อมียอดชำระแล้ว */}
+            <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 6, minHeight: 24 }}>
+              {readOnly || !onDeletePlan ? null : locked ? (
+                <span style={{ fontSize: 11.5, color: colors.inkMuted }}>ชำระแล้ว · ยกเลิกไม่ได้</span>
+              ) : confirmCancel ? (
+                <>
+                  <span style={{ fontSize: 12, color: colors.inkMuted }}>ยืนยัน?</span>
+                  <button onClick={() => { setConfirmCancel(false); onDeletePlan(); }} style={{ fontSize: 12, color: colors.overdueText, fontWeight: 700 }}>ยกเลิกแผน</button>
+                  <button onClick={() => setConfirmCancel(false)} style={{ fontSize: 12, color: colors.inkMuted, fontWeight: 600 }}>ไม่</button>
+                </>
+              ) : (
+                <button onClick={() => setConfirmCancel(true)} style={{ fontSize: 12, color: colors.overdueText, fontWeight: 600 }}>ยกเลิกแผน</button>
+              )}
+            </div>
+            {/* ขวา: กดเปิด/ปิดดูงวด */}
             <button
               onClick={() => setExpanded((v) => !v)}
               aria-expanded={expanded}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0, textAlign: 'left' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, textAlign: 'right' }}
             >
-              <IconChevron size={16} color={colors.inkMuted} style={{ flex: 'none', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }} />
               <span style={{ fontSize: 12.5, fontWeight: 600, color: colors.ink }}>แผนผ่อน {installments.length} งวด</span>
               <span style={{ fontSize: 11.5, color: colors.inkMuted }}>· จ่ายแล้ว {paidCount}/{installments.length}</span>
+              <IconChevron size={16} color={colors.inkMuted} style={{ flex: 'none', transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform .18s ease' }} />
             </button>
-            {!readOnly && onDeletePlan && (
-              <button onClick={onDeletePlan} style={{ fontSize: 12, color: colors.overdueText, fontWeight: 600, flex: 'none', marginLeft: 10 }}>ยกเลิกแผน</button>
-            )}
           </div>
           <div style={{ display: expanded ? 'flex' : 'none', flexDirection: 'column', gap: 7 }}>
             {installments.map((ins) => (
@@ -86,7 +102,7 @@ export function EntryCard({
                   <div style={{ fontSize: 13, fontWeight: 600, color: colors.ink }}>งวดที่ {ins.seq}</div>
                   <div style={{ fontSize: 11, color: colors.inkMuted }}>กำหนด {thaiFull(ins.due_date)}{ins.paid && ins.paid_at ? ` · จ่าย ${thaiFull(ins.paid_at)}` : ''}</div>
                 </div>
-                {!readOnly && onEditInstallment ? (
+                {!readOnly && onEditInstallment && !locked ? (
                   <button onClick={() => onEditInstallment(ins)} className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 14, color: colors.ink, textDecoration: 'underline dotted', textUnderlineOffset: 3 }}>
                     {baht(ins.amount)}
                   </button>

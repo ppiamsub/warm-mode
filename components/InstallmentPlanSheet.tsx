@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { colors, font, gradients } from '@/lib/theme';
 import { baht } from '@/lib/calc';
+import { splitAmount } from '@/lib/installments';
 
 function todayISO(): string {
   const d = new Date();
@@ -22,8 +23,9 @@ export function InstallmentPlanSheet({
   const [startDate, setStartDate] = useState(todayISO());
   const [busy, setBusy] = useState(false);
 
-  const perFirst = Math.floor(total / count);
-  const last = total - perFirst * (count - 1);
+  const parts = splitAmount(total, count);
+  const perFirst = parts[0];
+  const last = parts[parts.length - 1];
 
   const submit = async () => {
     setBusy(true);

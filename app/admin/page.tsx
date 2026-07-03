@@ -22,7 +22,7 @@ const AVATARS = [
 interface Overview {
   bookId: string;
   bookName: string;
-  headline: { totalRemaining: number; totalPaid: number; peopleCount: number };
+  headline: { totalRemaining: number; totalPaid: number; peopleCount: number; hasPlan: boolean; dueThisMonth: number };
   people: PersonSummary[];
 }
 
@@ -129,10 +129,25 @@ export default function AdminDashboard() {
           </div>
 
           <div style={{ marginTop: 22 }}>
-            <div style={{ fontSize: 13, opacity: 0.85 }}>ยอดค้างเก็บทั้งหมด</div>
-            <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 42, letterSpacing: '-.5px', marginTop: 3 }}>
-              {data ? baht(data.headline.totalRemaining) : '—'}
-            </div>
+            {data?.headline.hasPlan ? (
+              <>
+                <div style={{ fontSize: 13, opacity: 0.85 }}>ยอดค้างเก็บในเดือนนี้</div>
+                <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 42, letterSpacing: '-.5px', marginTop: 3 }}>
+                  {baht(data.headline.dueThisMonth)}
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, background: 'rgba(255,255,255,.14)', border: '1px solid rgba(255,255,255,.18)', borderRadius: 999, padding: '4px 12px' }}>
+                  <span style={{ fontSize: 12, opacity: 0.85 }}>ค้างเก็บทั้งหมด</span>
+                  <span className="tabular" style={{ fontFamily: font.display, fontWeight: 600, fontSize: 13.5 }}>{baht(data.headline.totalRemaining)}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ fontSize: 13, opacity: 0.85 }}>ยอดค้างเก็บทั้งหมด</div>
+                <div className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 42, letterSpacing: '-.5px', marginTop: 3 }}>
+                  {data ? baht(data.headline.totalRemaining) : '—'}
+                </div>
+              </>
+            )}
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>

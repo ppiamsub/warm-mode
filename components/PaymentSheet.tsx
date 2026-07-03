@@ -2,7 +2,7 @@
 // Screen 4 · Bottom sheet อัปเดตการจ่ายเงิน (รับชำระเต็ม/บางส่วน)
 import React, { useState } from 'react';
 import { colors, font, gradients } from '@/lib/theme';
-import { baht } from '@/lib/calc';
+import { baht, round2, sanitizeAmount, formatAmountInput } from '@/lib/calc';
 import { IconLines } from '@/components/ui/Icons';
 import type { EntryView } from '@/types';
 
@@ -15,10 +15,12 @@ export function PaymentSheet({
   onClose: () => void;
   onSave: (addAmount: number) => void;
 }) {
-  const [add, setAdd] = useState<number>(Math.min(2000, entry.remaining));
-  const remainingAfter = Math.max(entry.remaining - add, 0);
+  const [addStr, setAddStr] = useState<string>(String(Math.min(2000, entry.remaining)));
+  const add = Math.min(round2(Number(addStr || 0)), entry.remaining);
+  const remainingAfter = round2(Math.max(entry.remaining - add, 0));
 
-  const quick = (v: number) => setAdd((a) => Math.min(a + v, entry.remaining));
+  const setNum = (n: number) => setAddStr(String(round2(Math.min(Math.max(n, 0), entry.remaining))));
+  const quick = (v: number) => setNum(add + v);
 
   return (
     <div
@@ -96,14 +98,11 @@ export function PaymentSheet({
         >
           <span style={{ fontFamily: font.display, fontWeight: 700, fontSize: 26, color: colors.green }}>฿</span>
           <input
-            value={add.toLocaleString('en-US')}
-            onChange={(e) => {
-              const n = Number(e.target.value.replace(/[^\d]/g, '')) || 0;
-              setAdd(Math.min(n, entry.remaining));
-            }}
-            inputMode="numeric"
+            value={formatAmountInput(addStr)}
+            onChange={(e) => setAddStr(sanitizeAmount(e.target.value))}
+            inputMode="decimal"
             style={{
-              width: `${Math.max(add.toLocaleString('en-US').length, 1)}ch`,
+              width: `${Math.max(formatAmountInput(addStr).length, 1)}ch`,
               border: 'none',
               outline: 'none',
               background: 'transparent',
@@ -120,7 +119,7 @@ export function PaymentSheet({
         {/* ปุ่มลัด */}
         <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
           <button
-            onClick={() => setAdd(entry.remaining)}
+            onClick={() => setNum(entry.remaining)}
             style={{ flex: 1, textAlign: 'center', padding: '9px 0', borderRadius: 11, background: colors.paidBg, color: colors.green, fontSize: 13, fontWeight: 600, border: '1.5px solid #b7e0c8' }}
           >
             จ่ายครบ {baht(entry.remaining)}

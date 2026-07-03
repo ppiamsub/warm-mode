@@ -9,11 +9,15 @@ export function SummaryCard({
   remaining,
   paid,
   total,
+  hasPlan = false,
+  dueThisMonth = 0,
   floating = true,
 }: {
   remaining: number;
   paid: number;
   total: number;
+  hasPlan?: boolean;
+  dueThisMonth?: number;
   floating?: boolean;
 }) {
   const progress = total > 0 ? paid / total : 0;
@@ -32,13 +36,19 @@ export function SummaryCard({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 12.5, color: colors.inkMuted }}>ยอดค้างชำระ</div>
+          <div style={{ fontSize: 12.5, color: colors.inkMuted }}>{hasPlan ? 'ยอดค้างเก็บในเดือนนี้' : 'ยอดค้างเก็บทั้งหมด'}</div>
           <div
             className="tabular"
             style={{ fontFamily: font.display, fontWeight: 700, fontSize: 32, color: colors.ink, marginTop: 2 }}
           >
-            {baht(remaining)}
+            {baht(hasPlan ? dueThisMonth : remaining)}
           </div>
+          {hasPlan && (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, background: colors.paidBg, borderRadius: 999, padding: '4px 11px' }}>
+              <span style={{ fontSize: 11.5, color: colors.inkMuted }}>ค้างเก็บทั้งหมด</span>
+              <span className="tabular" style={{ fontFamily: font.display, fontWeight: 700, fontSize: 13, color: colors.ink }}>{baht(remaining)}</span>
+            </div>
+          )}
         </div>
         <div
           style={{

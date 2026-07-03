@@ -77,6 +77,13 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!bookId || bookId !== session.bookId) {
     return NextResponse.json({ error: 'ไม่พบรายการในบัญชีนี้' }, { status: 404 });
   }
+
+  // มียอดชำระแล้ว → ยกเลิกแผนไม่ได้
+  const { data: paidRows } = await db.from('installments').select('id').eq('entry_id', params.id).eq('paid', true).limit(1);
+  if (paidRows && paidRows.length) {
+    return NextResponse.json({ error: 'รายการนี้มีการชำระแล้ว ยกเลิกแผนไม่ได้' }, { status: 409 });
+  }
+
   const { error } = await db.from('installments').delete().eq('entry_id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });

@@ -2,6 +2,7 @@
 // Bottom sheet เพิ่มรายการใหม่ — กรอก รายละเอียด + ยอด + วันที่ (default วันนี้)
 import React, { useState } from 'react';
 import { colors, font, gradients } from '@/lib/theme';
+import { round2, sanitizeAmount, formatAmountInput } from '@/lib/calc';
 
 // วันที่วันนี้ในรูปแบบ YYYY-MM-DD (อิงเวลาเครื่อง)
 function todayISO(): string {
@@ -30,7 +31,7 @@ export function AddEntrySheet({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const amountNum = Number((amount || '').replace(/[^\d.]/g, ''));
+  const amountNum = round2(Number(amount || 0));
   const valid = description.trim().length > 0 && amountNum > 0;
 
   const submit = async () => {
@@ -99,10 +100,10 @@ export function AddEntrySheet({
         <div style={fieldStyle}>
           <span style={{ fontFamily: font.display, fontWeight: 700, fontSize: 20, color: colors.green }}>฿</span>
           <input
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/[^\d.]/g, ''))}
-            inputMode="numeric"
-            placeholder="0"
+            value={formatAmountInput(amount)}
+            onChange={(e) => setAmount(sanitizeAmount(e.target.value))}
+            inputMode="decimal"
+            placeholder="0.00"
             style={{ ...inputStyle, fontFamily: font.display, fontWeight: 700, fontSize: 20, color: colors.ink }}
           />
         </div>

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
 import { entryBookId } from '@/lib/installments';
+import { round2 } from '@/lib/calc';
 
 const SELECT = 'id, person_id, description, amount, paid_amount, entry_date, created_at';
 
@@ -47,8 +48,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
     const patch: Record<string, unknown> = {};
     if (body.amount != null) {
-      if (body.amount <= 0) return NextResponse.json({ error: 'ยอดต้องมากกว่า 0' }, { status: 400 });
-      patch.amount = body.amount;
+      const amount = round2(Number(body.amount));
+      if (!(amount > 0)) return NextResponse.json({ error: 'ยอดต้องมากกว่า 0' }, { status: 400 });
+      patch.amount = amount;
     }
     if (body.description != null) {
       if (!body.description.trim()) return NextResponse.json({ error: 'ต้องมีรายละเอียด' }, { status: 400 });
@@ -62,11 +64,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   // ── โหมดจ่ายเงิน (paid_amount) ──
-  const paid = body.paid_amount;
+  const paid = body.paid_amount == null ? null : round2(Number(body.paid_amount));
   if (paid == null || paid < 0) {
     return NextResponse.json({ error: 'paid_amount ต้อง >= 0' }, { status: 400 });
   }
-  const clamped = Math.min(paid, Number(entry.amount)); // กันจ่ายเกินยอดเต็ม
+  const clamped = round2(Math.min(paid, Number(entry.amount))); // กันจ่ายเกินยอดเต็ม
   const { data, error } = await db.from('entries').update({ paid_amount: clamped }).eq('id', params.id).select(SELECT).single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data);

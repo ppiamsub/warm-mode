@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
 import { entryBookId, recomputeEntryPaid } from '@/lib/installments';
+import { round2 } from '@/lib/calc';
 
 function todayISO(): string {
   const d = new Date();
@@ -36,10 +37,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const entryId = await ownedEntryId(db, params.id, session.bookId);
   if (!entryId) return NextResponse.json({ error: 'ไม่พบงวดในบัญชีนี้' }, { status: 404 });
 
+  // แก้ไขยอด/กำหนดชำระไม่ได้ถ้ารายการมีการชำระแล้ว (แต่ toggle paid ยังทำได้)
+  const editsPlan = body.amount != null || body.due_date != null;
+  if (editsPlan) {
+    const { data: paidRows } = await db.from('installments').select('id').eq('entry_id', entryId).eq('paid', true).limit(1);
+    if (paidRows && paidRows.length) {
+      return NextResponse.json({ error: 'รายการนี้มีการชำระแล้ว แก้ไขงวดไม่ได้' }, { status: 409 });
+    }
+  }
+
   const patch: Record<string, unknown> = {};
   if (body.amount != null) {
-    if (body.amount <= 0) return NextResponse.json({ error: 'ยอดต้องมากกว่า 0' }, { status: 400 });
-    patch.amount = body.amount;
+    const amount = round2(Number(body.amount));
+    if (!(amount > 0)) return NextResponse.json({ error: 'ยอดต้องมากกว่า 0' }, { status: 400 });
+    patch.amount = amount;
   }
   if (body.due_date) patch.due_date = body.due_date;
   if (body.paid != null) {
