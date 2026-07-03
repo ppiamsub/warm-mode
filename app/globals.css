@@ -33,7 +33,9 @@ body {
 .phone {
   width: 100%;
   max-width: 440px;
-  min-height: 100dvh;
+  /* height ที่ "แน่นอน" (ไม่ใช่ min-height) เพื่อให้ flex:1 ของเนื้อหา scroll ได้จริง
+     และแถบเมนูล่างถูกตรึงในจอเสมอ — สำคัญมากบน LINE LIFF ที่ไม่มี browser chrome */
+  height: 100dvh;
   background: #eef5f0;
   position: relative;
   overflow: hidden;

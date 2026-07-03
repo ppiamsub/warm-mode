@@ -25,7 +25,7 @@ export function BottomNav({ active = 'home', variant = 'admin' }: { active?: Tab
   const router = useRouter();
   const items = variant === 'viewer' ? VIEWER : ADMIN;
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-around', padding: '2px 20px 26px' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-around', padding: '2px 20px', paddingBottom: 'max(20px, calc(10px + env(safe-area-inset-bottom)))' }}>
       {items.map(({ key, label, Icon, href }) => {
         const on = key === active;
         return (

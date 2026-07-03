@@ -11,6 +11,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: 'cover', // ให้ env(safe-area-inset-*) ใช้งานได้ (เว้นขอบ home indicator บน iOS/LIFF)
   themeColor: '#127a4c',
 };
 
