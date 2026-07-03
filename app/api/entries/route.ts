@@ -2,7 +2,8 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireSession, requireAdmin } from '@/lib/guard';
-import { round2 } from '@/lib/calc';
+import { round2, baht } from '@/lib/calc';
+import { logActivity } from '@/lib/activity';
 
 export async function GET(req: Request) {
   let session;
@@ -31,8 +32,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  let session;
   try {
-    requireAdmin();
+    session = requireAdmin();
   } catch (res) {
     return res as NextResponse;
   }
@@ -64,5 +66,16 @@ export async function POST(req: Request) {
     .select('id, person_id, description, amount, paid_amount, entry_date, created_at')
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const { data: person } = await db.from('people').select('name').eq('id', person_id).maybeSingle();
+  await logActivity(db, {
+    bookId: session.bookId,
+    session,
+    action: 'entry_add',
+    summary: `เพิ่มรายการ "${data.description}" ${baht(Number(data.amount))}`,
+    personId: person_id,
+    personName: person?.name ?? null,
+    entryId: data.id,
+  });
   return NextResponse.json(data, { status: 201 });
 }

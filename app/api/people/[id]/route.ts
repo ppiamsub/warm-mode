@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
+import { logActivity } from '@/lib/activity';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const db = getSupabaseAdmin();
+  const { data: before } = await db.from('people').select('name').eq('id', params.id).eq('book_id', session.bookId).maybeSingle();
   const { data, error } = await db
     .from('people')
     .update({ name: name.trim() })
@@ -32,6 +34,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     .select('id, name, personal_code')
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (before && before.name !== data.name) {
+    await logActivity(db, {
+      bookId: session.bookId,
+      session,
+      action: 'person_rename',
+      summary: `เปลี่ยนชื่อสมาชิก "${before.name}" → "${data.name}"`,
+      personId: params.id,
+      personName: data.name,
+    });
+  }
   return NextResponse.json(data);
 }
 
@@ -81,8 +94,20 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   }
 
   const db = getSupabaseAdmin();
+  const { data: before } = await db.from('people').select('name').eq('id', params.id).eq('book_id', session.bookId).maybeSingle();
   // จำกัดให้ลบได้เฉพาะคนในบัญชีของตัวเอง
   const { error } = await db.from('people').delete().eq('id', params.id).eq('book_id', session.bookId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (before) {
+    await logActivity(db, {
+      bookId: session.bookId,
+      session,
+      action: 'person_delete',
+      summary: `ลบสมาชิก "${before.name}"`,
+      personId: params.id,
+      personName: before.name,
+    });
+  }
   return NextResponse.json({ ok: true });
 }

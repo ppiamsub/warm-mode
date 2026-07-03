@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
+import { logActivity } from '@/lib/activity';
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   let session;
@@ -25,8 +26,18 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const db = getSupabaseAdmin();
+  const { data: before } = await db.from('books').select('name').eq('id', params.id).maybeSingle();
   const { data, error } = await db.from('books').update({ name: name.trim() }).eq('id', params.id).select('id, name').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (before && before.name !== data.name) {
+    await logActivity(db, {
+      bookId: session.bookId,
+      session,
+      action: 'book_rename',
+      summary: `เปลี่ยนชื่อบัญชี "${before.name}" → "${data.name}"`,
+    });
+  }
   return NextResponse.json(data);
 }
 

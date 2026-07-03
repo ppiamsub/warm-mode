@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
 import { splitAmount, addMonthsISO, entryBookId, recomputeEntryPaid } from '@/lib/installments';
+import { logActivity, entryLogContext } from '@/lib/activity';
 
 function todayISO(): string {
   const d = new Date();
@@ -61,6 +62,17 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   // แผนใหม่ยังไม่จ่ายงวดไหน ➔ paid_amount = 0
   await recomputeEntryPaid(db, params.id);
 
+  const ctx = await entryLogContext(db, params.id);
+  await logActivity(db, {
+    bookId: session.bookId,
+    session,
+    action: 'plan_create',
+    summary: `สร้างแผนผ่อน ${count} งวด — "${ctx.description ?? ''}"`,
+    personId: ctx.personId,
+    personName: ctx.personName,
+    entryId: params.id,
+  });
+
   return NextResponse.json({ installments: data }, { status: 201 });
 }
 
@@ -84,7 +96,18 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: 'รายการนี้มีการชำระแล้ว ยกเลิกแผนไม่ได้' }, { status: 409 });
   }
 
+  const ctx = await entryLogContext(db, params.id);
   const { error } = await db.from('installments').delete().eq('entry_id', params.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logActivity(db, {
+    bookId: session.bookId,
+    session,
+    action: 'plan_delete',
+    summary: `ยกเลิกแผนผ่อน — "${ctx.description ?? ''}"`,
+    personId: ctx.personId,
+    personName: ctx.personName,
+    entryId: params.id,
+  });
   return NextResponse.json({ ok: true });
 }

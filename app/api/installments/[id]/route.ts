@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/guard';
 import { entryBookId, recomputeEntryPaid } from '@/lib/installments';
-import { round2 } from '@/lib/calc';
+import { round2, baht } from '@/lib/calc';
+import { logActivity, entryLogContext } from '@/lib/activity';
 
 function todayISO(): string {
   const d = new Date();
@@ -65,6 +66,25 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   await recomputeEntryPaid(db, entryId); // อัปเดต paid_amount ของ entry ตามงวดที่จ่าย
+
+  // บันทึก log
+  const ctx = await entryLogContext(db, entryId);
+  const logBase = { bookId: session.bookId, session, personId: ctx.personId, personName: ctx.personName, entryId };
+  const forEntry = ctx.description ? ` — "${ctx.description}"` : '';
+  if (body.paid != null) {
+    await logActivity(db, {
+      ...logBase,
+      action: data.paid ? 'installment_pay' : 'installment_unpay',
+      summary: data.paid ? `เก็บงวดที่ ${data.seq} ${baht(Number(data.amount))}${forEntry}` : `ยกเลิกการเก็บงวดที่ ${data.seq}${forEntry}`,
+    });
+  } else {
+    const changes: string[] = [];
+    if (body.amount != null) changes.push(`ยอดเป็น ${baht(Number(data.amount))}`);
+    if (body.due_date != null) changes.push(`กำหนดชำระเป็น ${data.due_date}`);
+    if (changes.length) {
+      await logActivity(db, { ...logBase, action: 'installment_edit', summary: `แก้ไขงวดที่ ${data.seq} — ${changes.join(', ')}${forEntry}` });
+    }
+  }
   return NextResponse.json(data);
 }
 

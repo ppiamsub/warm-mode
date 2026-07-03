@@ -3,14 +3,14 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { colors } from '@/lib/theme';
-import { IconHome, IconPeople, IconChart, IconProfile } from '@/components/ui/Icons';
+import { IconHome, IconChart, IconHistory, IconProfile } from '@/components/ui/Icons';
 
-type Tab = 'home' | 'people' | 'summary' | 'profile';
+type Tab = 'home' | 'summary' | 'activity' | 'profile';
 
 const items: { key: Tab; label: string; Icon: typeof IconHome; href: string }[] = [
   { key: 'home', label: 'หน้าหลัก', Icon: IconHome, href: '/admin' },
-  { key: 'people', label: 'สมาชิก', Icon: IconPeople, href: '/admin' },
   { key: 'summary', label: 'สรุปยอด', Icon: IconChart, href: '/admin/summary' },
+  { key: 'activity', label: 'ประวัติ', Icon: IconHistory, href: '/admin/activity' },
   { key: 'profile', label: 'บัญชี', Icon: IconProfile, href: '/accounts' },
 ];
 
